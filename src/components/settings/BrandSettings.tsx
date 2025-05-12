@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 
 export function BrandSettings() {
   const [siteName, setSiteName] = useState('IAprópria');
@@ -14,6 +15,7 @@ export function BrandSettings() {
   const [siteLogoPreview, setSiteLogoPreview] = useState<string | null>(null);
   const [tabLogoPreview, setTabLogoPreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [logoPosition, setLogoPosition] = useState<'lado' | 'topo'>('lado');
   
   const handleSiteLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -58,6 +60,29 @@ export function BrandSettings() {
       setSaving(false);
     }, 1500);
   };
+
+  // Exemplo de como o logo e nome da empresa apareceriam
+  const LogoPreview = () => (
+    <Card className="mt-4">
+      <CardHeader>
+        <CardTitle>Pré-visualização</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className={`flex ${logoPosition === 'lado' ? 'flex-row items-center' : 'flex-col items-center'} space-x-2`}>
+          {siteLogoPreview && (
+            <div className={`${logoPosition === 'lado' ? 'h-10 w-10' : 'h-16 w-16 mb-2'}`}>
+              <img 
+                src={siteLogoPreview} 
+                alt="Logo Preview" 
+                className="h-full w-full object-contain"
+              />
+            </div>
+          )}
+          <span className="text-lg font-medium">{siteName || 'IAprópria'}</span>
+        </div>
+      </CardContent>
+    </Card>
+  );
   
   return (
     <Card>
@@ -102,6 +127,25 @@ export function BrandSettings() {
             Recomendado: imagem quadrada de pelo menos 100x100 pixels em formato PNG ou JPG.
           </p>
         </div>
+        
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-medium text-sm">Posição do logo</p>
+            <p className="text-xs text-muted-foreground">
+              Exibir o logo ao lado ou acima do nome da empresa
+            </p>
+          </div>
+          <div className="flex items-center space-x-2">
+            <span className="text-sm">Topo</span>
+            <Switch 
+              checked={logoPosition === 'lado'} 
+              onCheckedChange={(checked) => setLogoPosition(checked ? 'lado' : 'topo')}
+            />
+            <span className="text-sm">Lado</span>
+          </div>
+        </div>
+        
+        <LogoPreview />
         
         <div className="space-y-2">
           <Label htmlFor="tab-name">Nome da Aba do Navegador</Label>

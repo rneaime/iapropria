@@ -6,6 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ChevronDown, Search } from 'lucide-react';
+import { HelpChat } from './HelpChat';
 
 export function HelpCenter() {
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -24,12 +25,17 @@ export function HelpCenter() {
         />
       </div>
       
-      <Tabs defaultValue="faq">
-        <TabsList className="grid w-full grid-cols-3">
+      <Tabs defaultValue="chat">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="chat">Chat de Ajuda</TabsTrigger>
           <TabsTrigger value="faq">FAQ</TabsTrigger>
           <TabsTrigger value="tutoriais">Tutoriais</TabsTrigger>
           <TabsTrigger value="contato">Contato</TabsTrigger>
         </TabsList>
+        
+        <TabsContent value="chat" className="pt-4">
+          <HelpChat />
+        </TabsContent>
         
         <TabsContent value="faq" className="space-y-4 pt-4">
           <Card>
