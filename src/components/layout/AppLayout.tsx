@@ -2,7 +2,7 @@
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, LogOut, Settings, MessageSquare, Image, Upload, Trash, Filter } from 'lucide-react';
+import { User, LogOut, Settings, MessageSquare, Image, Upload, Trash, Filter, History, HelpCircle, Link, Phone } from 'lucide-react';
 import { aiService } from '@/services/aiService';
 
 interface AppLayoutProps {
@@ -61,6 +61,10 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Conversa IA
               </TabsTrigger>
+              <TabsTrigger value="historico" className="py-3">
+                <History className="h-4 w-4 mr-2" />
+                Histórico
+              </TabsTrigger>
               <TabsTrigger value="filtros" className="py-3">
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros
@@ -80,6 +84,10 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
               <TabsTrigger value="parametros" className="py-3">
                 <Settings className="h-4 w-4 mr-2" />
                 Configurações
+              </TabsTrigger>
+              <TabsTrigger value="ajuda" className="py-3">
+                <HelpCircle className="h-4 w-4 mr-2" />
+                Ajuda
               </TabsTrigger>
             </TabsList>
           </Tabs>

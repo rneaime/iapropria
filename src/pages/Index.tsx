@@ -8,19 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { toast } from "@/components/ui/use-toast";
-import { Separator } from "@/components/ui/separator";
 import { AppLayout } from '@/components/layout/AppLayout';
 import { MessageList } from '@/components/chat/MessageList';
 import { UploadForm } from '@/components/files/UploadForm';
@@ -33,6 +21,8 @@ import { MetadataFilter } from '@/components/metadata/MetadataFilter';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
+import { HistoryView } from '@/components/history/HistoryView';
+import { HelpCenter } from '@/components/help/HelpCenter';
 import { authService } from '@/services/authService';
 import { aiService } from '@/services/aiService';
 
@@ -203,6 +193,10 @@ const Index = () => {
           </div>
         )}
         
+        {activeTab === "historico" && (
+          <HistoryView userId={userId} />
+        )}
+        
         {activeTab === "filtros" && (
           <MetadataFilter 
             userId={userId}
@@ -221,6 +215,8 @@ const Index = () => {
         )}
         
         {activeTab === "parametros" && <Settings />}
+        
+        {activeTab === "ajuda" && <HelpCenter />}
       </div>
     </AppLayout>
   );
