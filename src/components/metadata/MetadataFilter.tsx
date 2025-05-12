@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/accordion";
 import { toast } from "@/components/ui/use-toast";
 import { pineconeService } from "@/services/pineconeService";
+import { Trash, Save, CheckSquare } from "lucide-react";
 
 interface MetadataFilterProps {
   userId: string;
@@ -21,6 +22,7 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
   const [filters, setFilters] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   
   // Colunas para filtrar
   const filterColumns = [
@@ -96,6 +98,36 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
     });
   };
   
+  // Selecionar ou desmarcar todos os valores de uma coluna
+  const handleSelectAll = (column: string, selectAll: boolean) => {
+    const uniqueValues = getUniqueValues(column);
+    
+    setFilters(prev => {
+      const newFilters = { ...prev };
+      
+      if (selectAll) {
+        newFilters[column] = [...uniqueValues];
+      } else {
+        delete newFilters[column];
+      }
+      
+      // Notificar mudanças
+      if (onFilterChange) {
+        onFilterChange(newFilters);
+      }
+      
+      return newFilters;
+    });
+  };
+  
+  // Verificar se todos os valores de uma coluna estão selecionados
+  const areAllSelected = (column: string) => {
+    const uniqueValues = getUniqueValues(column);
+    return uniqueValues.length > 0 && 
+      filters[column]?.length === uniqueValues.length &&
+      uniqueValues.every(value => filters[column]?.includes(value));
+  };
+  
   // Salvar filtros
   const handleSaveFilters = async () => {
     setSaving(true);
@@ -116,6 +148,32 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
     }
   };
   
+  // Deletar filtros
+  const handleDeleteFilters = async () => {
+    setDeleting(true);
+    try {
+      await pineconeService.salvarFiltros(userId, {});
+      setFilters({});
+      
+      if (onFilterChange) {
+        onFilterChange({});
+      }
+      
+      toast({
+        title: "Filtros removidos",
+        description: "Todos os filtros foram removidos com sucesso!"
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Não foi possível remover os filtros.",
+        variant: "destructive"
+      });
+    } finally {
+      setDeleting(false);
+    }
+  };
+  
   if (loading) {
     return (
       <div className="flex justify-center p-8">
@@ -126,21 +184,64 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
   
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">Filtros de Metadados</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Filtros de Metadados</h2>
+        <div className="flex space-x-2">
+          <Button 
+            onClick={handleSaveFilters} 
+            disabled={saving}
+            className="flex items-center"
+          >
+            <Save className="mr-1 h-4 w-4" />
+            {saving ? "Salvando..." : "Salvar filtros"}
+          </Button>
+          <Button 
+            onClick={handleDeleteFilters} 
+            disabled={deleting}
+            variant="destructive"
+            className="flex items-center"
+          >
+            <Trash className="mr-1 h-4 w-4" />
+            {deleting ? "Removendo..." : "Remover filtros"}
+          </Button>
+        </div>
+      </div>
       
       <Accordion type="multiple" className="w-full">
         {filterColumns.map(column => {
           const uniqueValues = getUniqueValues(column);
           
           if (uniqueValues.length === 0) return null;
+          const isAllSelected = areAllSelected(column);
           
           return (
             <AccordionItem key={column} value={column}>
               <AccordionTrigger className="capitalize">
-                {column}
+                <div className="flex items-center">
+                  {column}
+                </div>
               </AccordionTrigger>
               <AccordionContent>
                 <div className="space-y-2 pl-4">
+                  <div className="flex items-center space-x-2 mb-2 pb-1 border-b">
+                    <Checkbox 
+                      id={`select-all-${column}`}
+                      checked={isAllSelected}
+                      onCheckedChange={(checked) => 
+                        handleSelectAll(column, checked === true)
+                      }
+                    />
+                    <label 
+                      htmlFor={`select-all-${column}`}
+                      className="text-sm font-medium"
+                    >
+                      <div className="flex items-center">
+                        <CheckSquare className="mr-1 h-4 w-4" />
+                        Selecionar Todos
+                      </div>
+                    </label>
+                  </div>
+                  
                   {uniqueValues.map(value => (
                     <div key={`${column}-${value}`} className="flex items-center space-x-2">
                       <Checkbox 
@@ -165,13 +266,25 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
         })}
       </Accordion>
       
-      <Button 
-        onClick={handleSaveFilters} 
-        disabled={saving}
-        className="w-full"
-      >
-        {saving ? "Salvando..." : "Salvar filtros"}
-      </Button>
+      <div className="flex justify-between pt-4">
+        <Button 
+          onClick={handleSaveFilters} 
+          disabled={saving}
+          className="w-[48%]"
+        >
+          <Save className="mr-1 h-4 w-4" />
+          {saving ? "Salvando..." : "Salvar filtros"}
+        </Button>
+        <Button 
+          onClick={handleDeleteFilters} 
+          disabled={deleting}
+          variant="destructive"
+          className="w-[48%]"
+        >
+          <Trash className="mr-1 h-4 w-4" />
+          {deleting ? "Removendo..." : "Remover filtros"}
+        </Button>
+      </div>
     </div>
   );
 }

@@ -163,7 +163,7 @@ const Index = () => {
               </div>
             </div>
             
-            <MessageList messages={messages} className="flex-1 overflow-y-auto mb-4" />
+            <MessageList messages={messages} />
             
             <div className="border rounded-lg p-4 mt-auto">
               <ChatInput 
@@ -178,7 +178,7 @@ const Index = () => {
           <div className="space-y-4 flex flex-col h-[calc(100vh-16rem)]">
             <h2 className="text-2xl font-bold">Conversa IA</h2>
             
-            <MessageList messages={messages} className="flex-1 overflow-y-auto mb-4" />
+            <MessageList messages={messages} />
             
             <div className="border rounded-lg p-4 mt-auto">
               <ChatInput 
