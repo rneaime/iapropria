@@ -12,7 +12,7 @@ export function AppearanceSettings() {
   const [theme, setTheme] = useState<string>("light");
   const [fontSize, setFontSize] = useState<string>("medium");
   const [compactMode, setCompactMode] = useState<boolean>(false);
-  const [burgundyTheme, setBurgundyTheme] = useState<boolean>(false);
+  const [burgundyTheme, setBurgundyTheme] = useState<boolean>(true); // Default to true
   const [saving, setSaving] = useState<boolean>(false);
 
   const handleSaveAppearance = () => {
@@ -29,6 +29,11 @@ export function AppearanceSettings() {
   };
 
   useEffect(() => {
+    // Apply burgundy theme by default when component mounts
+    document.documentElement.style.setProperty('--primary', '91 25% 31%'); // #5b3746 in hsl
+    document.documentElement.style.setProperty('--primary-foreground', '0 0% 100%');
+    
+    // Watch for changes to the burgundyTheme state
     if (burgundyTheme) {
       document.documentElement.style.setProperty('--primary', '91 25% 31%'); // #5b3746 in hsl
       document.documentElement.style.setProperty('--primary-foreground', '0 0% 100%');

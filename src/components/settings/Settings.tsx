@@ -17,6 +17,8 @@ import { authService } from "@/services/authService";
 import { ApiConnector } from "@/components/settings/ApiConnector";
 import { WhatsappConnector } from "@/components/settings/WhatsappConnector";
 import { AppearanceSettings } from "@/components/settings/AppearanceSettings";
+import { EditProfile } from "@/components/settings/EditProfile";
+import { BrandSettings } from "@/components/settings/BrandSettings";
 
 export function Settings() {
   const [selectedModel, setSelectedModel] = useState<string>("");
@@ -74,12 +76,13 @@ export function Settings() {
       <h2 className="text-2xl font-bold">Configurações</h2>
       
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-5 w-full">
+        <TabsList className="grid grid-cols-6 w-full">
           <TabsTrigger value="geral">Geral</TabsTrigger>
+          <TabsTrigger value="perfil">Perfil</TabsTrigger>
           <TabsTrigger value="api">API</TabsTrigger>
           <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
           <TabsTrigger value="personalizacao">Personalização</TabsTrigger>
-          <TabsTrigger value="integracao">Integrações</TabsTrigger>
+          <TabsTrigger value="marca">Marca</TabsTrigger>
         </TabsList>
 
         <TabsContent value="geral" className="space-y-6 pt-4">
@@ -154,6 +157,10 @@ export function Settings() {
           </Card>
         </TabsContent>
         
+        <TabsContent value="perfil" className="pt-4">
+          <EditProfile />
+        </TabsContent>
+        
         <TabsContent value="api" className="pt-4">
           <ApiConnector />
         </TabsContent>
@@ -166,39 +173,8 @@ export function Settings() {
           <AppearanceSettings />
         </TabsContent>
         
-        <TabsContent value="integracao" className="pt-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Integrações Externas</CardTitle>
-              <CardDescription>
-                Conecte a plataforma com outros serviços externos.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <IntegrationCard 
-                  name="Google Drive" 
-                  description="Acesse documentos do Google Drive" 
-                  connected={false}
-                />
-                <IntegrationCard 
-                  name="Microsoft Teams" 
-                  description="Integre com Microsoft Teams" 
-                  connected={false}
-                />
-                <IntegrationCard 
-                  name="Slack" 
-                  description="Conecte com seu workspace do Slack" 
-                  connected={false}
-                />
-                <IntegrationCard 
-                  name="Zapier" 
-                  description="Automatize tarefas com Zapier" 
-                  connected={false}
-                />
-              </div>
-            </CardContent>
-          </Card>
+        <TabsContent value="marca" className="pt-4">
+          <BrandSettings />
         </TabsContent>
       </Tabs>
     </div>

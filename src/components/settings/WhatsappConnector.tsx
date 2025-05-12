@@ -9,12 +9,22 @@ import QRCode from 'react-qr-code';
 
 export function WhatsappConnector() {
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [whatsappToken, setWhatsappToken] = useState('');
   const [connected, setConnected] = useState(false);
   const [connecting, setConnecting] = useState(false);
   const [showQrCode, setShowQrCode] = useState(false);
   const [receiveNotifications, setReceiveNotifications] = useState(false);
   
   const handleConnect = () => {
+    if (!phoneNumber || !whatsappToken) {
+      toast({
+        title: "Campos obrigatórios",
+        description: "Número de telefone e Token do WhatsApp são obrigatórios.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     if (connected) {
       // Desconectar
       setConnected(false);
@@ -58,6 +68,18 @@ export function WhatsappConnector() {
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="whatsapp-token" className="text-sm font-medium">Token do WhatsApp</label>
+            <Input 
+              id="whatsapp-token"
+              type="password"
+              placeholder="Insira seu token do WhatsApp"
+              value={whatsappToken}
+              onChange={(e) => setWhatsappToken(e.target.value)}
+              disabled={connected}
+            />
+          </div>
+          
           <div className="space-y-2">
             <label htmlFor="phone-number" className="text-sm font-medium">Número do WhatsApp</label>
             <Input 
