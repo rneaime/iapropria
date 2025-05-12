@@ -167,14 +167,20 @@ const Index = () => {
               </div>
             </div>
             
-            <MessageList messages={messages} />
-            
-            <div className="border rounded-lg p-4 mt-auto">
-              <ChatInput 
-                onSendMessage={handleSendMessage}
-                placeholder="Digite sua mensagem para o atendimento IA..."
-              />
-            </div>
+            <Card className="flex-1">
+              <CardContent className="p-0 h-full flex flex-col">
+                <div className="flex-1 overflow-y-auto p-4">
+                  <MessageList messages={messages} />
+                </div>
+                
+                <div className="p-4 border-t border-gray-200">
+                  <ChatInput 
+                    onSendMessage={handleSendMessage}
+                    placeholder="Digite sua mensagem para o atendimento IA..."
+                  />
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
         
@@ -182,14 +188,20 @@ const Index = () => {
           <div className="space-y-4 flex flex-col h-[calc(100vh-16rem)]">
             <h2 className="text-2xl font-bold">Conversa IA</h2>
             
-            <MessageList messages={messages} />
-            
-            <div className="border rounded-lg p-4 mt-auto">
-              <ChatInput 
-                onSendMessage={handleSendMessage}
-                placeholder="Digite sua mensagem para conversação..."
-              />
-            </div>
+            <Card className="flex-1">
+              <CardContent className="p-0 h-full flex flex-col">
+                <div className="flex-1 overflow-y-auto p-4">
+                  <MessageList messages={messages} />
+                </div>
+                
+                <div className="p-4 border-t border-gray-200">
+                  <ChatInput 
+                    onSendMessage={handleSendMessage}
+                    placeholder="Digite sua mensagem para conversação..."
+                  />
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
         
