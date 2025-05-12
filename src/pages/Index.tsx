@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -22,8 +23,10 @@ import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
 import { LoginChat } from '@/components/auth/LoginChat';
 import { HistoryView } from '@/components/history/HistoryView';
 import { HelpCenter } from '@/components/help/HelpCenter';
+import { ChatInterface } from '@/components/chat/ChatInterface';
 import { authService } from '@/services/authService';
 import { aiService } from '@/services/aiService';
+import { convertToStandardMessages } from '@/utils/chatUtils';
 
 interface Message {
   pergunta: string;
@@ -34,6 +37,7 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState<string>("atendimento");
   const [messages, setMessages] = useState<Message[]>([]);
   const [authMode, setAuthMode] = useState<"login" | "register" | "forgot">("login");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   
   // Estado de autenticação
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
@@ -79,28 +83,28 @@ const Index = () => {
   };
   
   // Função para lidar com envio de mensagens
-  const handleSendMessage = async (message: string, urls?: string[]) => {
-    // Adicionar a mensagem do usuário à lista
-    const newMessage: Message = { pergunta: message, resposta: "" };
-    setMessages(prevMessages => [...prevMessages, newMessage]);
+  const handleSendMessage = async (message: string) => {
+    setIsLoading(true);
     
     try {
       // Processar a resposta da IA
       const response = await aiService.sendMessage(message, messages);
       
-      // Atualizar a mensagem com a resposta
-      setMessages(prevMessages => {
-        const updatedMessages = [...prevMessages];
-        updatedMessages[updatedMessages.length - 1].resposta = response;
-        return updatedMessages;
-      });
+      // Atualizar a lista de mensagens
+      setMessages(prevMessages => [
+        ...prevMessages,
+        { pergunta: message, resposta: response }
+      ]);
     } catch (error) {
-      setMessages(prevMessages => {
-        const updatedMessages = [...prevMessages];
-        updatedMessages[updatedMessages.length - 1].resposta = 
-          "Erro ao processar mensagem. Por favor, tente novamente.";
-        return updatedMessages;
-      });
+      setMessages(prevMessages => [
+        ...prevMessages, 
+        { 
+          pergunta: message, 
+          resposta: "Erro ao processar mensagem. Por favor, tente novamente."
+        }
+      ]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -143,6 +147,9 @@ const Index = () => {
     );
   }
 
+  // Converter mensagens para o formato padrão
+  const standardMessages = convertToStandardMessages(messages);
+
   // Se autenticado, mostrar a aplicação principal
   return (
     <AppLayout 
@@ -166,25 +173,16 @@ const Index = () => {
               </div>
             </div>
             
-            <Card className="w-full flex-1">
-              <CardHeader className="bg-burgundy text-white rounded-t-md">
-                <CardTitle>Assistente de Atendimento IAprópria</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="flex flex-col h-full">
-                  <div className="flex-1 overflow-y-auto p-4">
-                    <MessageList messages={messages} />
-                  </div>
-                  
-                  <div className="p-4 border-t border-gray-200">
-                    <ChatInput 
-                      onSendMessage={handleSendMessage}
-                      placeholder="Digite sua mensagem para o atendimento IA..."
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <ChatInterface
+              title="Assistente de Atendimento IAprópria"
+              initialMessages={[
+                { content: "Olá! Sou o assistente da IAprópria. Como posso ajudá-lo hoje?", sender: 'assistant' },
+                ...standardMessages
+              ]}
+              onSendMessage={handleSendMessage}
+              isLoading={isLoading}
+              placeholder="Digite sua mensagem para o atendimento IA..."
+            />
           </div>
         )}
         
@@ -192,25 +190,16 @@ const Index = () => {
           <div className="space-y-4 flex flex-col h-[calc(100vh-16rem)]">
             <h2 className="text-2xl font-bold">Conversa IA</h2>
             
-            <Card className="w-full flex-1">
-              <CardHeader className="bg-burgundy text-white rounded-t-md">
-                <CardTitle>Assistente de Conversa IAprópria</CardTitle>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className="flex flex-col h-full">
-                  <div className="flex-1 overflow-y-auto p-4">
-                    <MessageList messages={messages} />
-                  </div>
-                  
-                  <div className="p-4 border-t border-gray-200">
-                    <ChatInput 
-                      onSendMessage={handleSendMessage}
-                      placeholder="Digite sua mensagem para conversação..."
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <ChatInterface
+              title="Assistente de Conversa IAprópria"
+              initialMessages={[
+                { content: "Olá! Sou o assistente da IAprópria. Como posso ajudá-lo hoje?", sender: 'assistant' },
+                ...standardMessages
+              ]}
+              onSendMessage={handleSendMessage}
+              isLoading={isLoading}
+              placeholder="Digite sua mensagem para conversação..."
+            />
           </div>
         )}
         
