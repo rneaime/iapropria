@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/use-toast";
-import { QRCode } from 'react-qrcode-logo';
+import QRCode from 'react-qr-code';
 
 export function WhatsappConnector() {
   const [phoneNumber, setPhoneNumber] = useState('');
