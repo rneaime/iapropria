@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -167,17 +166,22 @@ const Index = () => {
               </div>
             </div>
             
-            <Card className="flex-1">
-              <CardContent className="p-0 h-full flex flex-col">
-                <div className="flex-1 overflow-y-auto p-4">
-                  <MessageList messages={messages} />
-                </div>
-                
-                <div className="p-4 border-t border-gray-200">
-                  <ChatInput 
-                    onSendMessage={handleSendMessage}
-                    placeholder="Digite sua mensagem para o atendimento IA..."
-                  />
+            <Card className="w-full flex-1">
+              <CardHeader className="bg-burgundy text-white rounded-t-md">
+                <CardTitle>Assistente de Atendimento IAprópria</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="flex flex-col h-full">
+                  <div className="flex-1 overflow-y-auto p-4">
+                    <MessageList messages={messages} />
+                  </div>
+                  
+                  <div className="p-4 border-t border-gray-200">
+                    <ChatInput 
+                      onSendMessage={handleSendMessage}
+                      placeholder="Digite sua mensagem para o atendimento IA..."
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -188,17 +192,22 @@ const Index = () => {
           <div className="space-y-4 flex flex-col h-[calc(100vh-16rem)]">
             <h2 className="text-2xl font-bold">Conversa IA</h2>
             
-            <Card className="flex-1">
-              <CardContent className="p-0 h-full flex flex-col">
-                <div className="flex-1 overflow-y-auto p-4">
-                  <MessageList messages={messages} />
-                </div>
-                
-                <div className="p-4 border-t border-gray-200">
-                  <ChatInput 
-                    onSendMessage={handleSendMessage}
-                    placeholder="Digite sua mensagem para conversação..."
-                  />
+            <Card className="w-full flex-1">
+              <CardHeader className="bg-burgundy text-white rounded-t-md">
+                <CardTitle>Assistente de Conversa IAprópria</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="flex flex-col h-full">
+                  <div className="flex-1 overflow-y-auto p-4">
+                    <MessageList messages={messages} />
+                  </div>
+                  
+                  <div className="p-4 border-t border-gray-200">
+                    <ChatInput 
+                      onSendMessage={handleSendMessage}
+                      placeholder="Digite sua mensagem para conversação..."
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
