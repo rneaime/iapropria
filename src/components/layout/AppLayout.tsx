@@ -1,100 +1,100 @@
 
 import React from 'react';
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { 
-  Home, 
-  MessageCircle, 
-  Upload, 
-  Trash, 
-  Settings, 
-  Image,
-  History, 
-  Edit, 
-  Link, 
-  Phone, 
-  Settings as Personalize,
-  HelpCircle,
-  LogOut
-} from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { User, LogOut, Settings, MessageSquare, Image, Upload, Trash, Filter } from 'lucide-react';
+import { aiService } from '@/services/aiService';
 
 interface AppLayoutProps {
-  user: { id: number; name: string };
-  onLogout: (saveChatHistory?: boolean) => void;
   children: React.ReactNode;
+  user: any;
+  onLogout: (saveChatHistory?: boolean) => void;
   activeTab: string;
   setActiveTab: (tab: string) => void;
 }
 
-const menuItems = [
-  { id: "atendimento", label: "Atendimento IA", icon: Home },
-  { id: "conversa", label: "Conversa IA", icon: MessageCircle },
-  { id: "gerar-imagem", label: "Gerar Imagem", icon: Image },
-  { id: "enviar-arquivo", label: "Enviar Arquivo", icon: Upload },
-  { id: "deletar-arquivo", label: "Deletar Arquivo", icon: Trash },
-  { id: "parametros", label: "Parâmetros", icon: Settings },
-  { id: "historico", label: "Histórico", icon: History },
-  { id: "editar-cadastro", label: "Editar Cadastro", icon: Edit },
-  { id: "conectar-api", label: "Conectar API", icon: Link },
-  { id: "conectar-whatsapp", label: "Conectar Whatsapp", icon: Phone },
-  { id: "personalizar", label: "Personalizar", icon: Personalize },
-  { id: "ajuda", label: "Ajuda", icon: HelpCircle },
-  { id: "sair", label: "Sair", icon: LogOut },
-];
-
 export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }: AppLayoutProps) {
-  const handleMenuItemClick = (id: string) => {
-    if (id === "sair") {
-      // Show logout confirmation
-      if (window.confirm("Deseja salvar a conversa antes de sair?")) {
-        onLogout(true);
-      } else {
-        onLogout(false);
-      }
-      return;
+  const [modelName, setModelName] = React.useState<string>("");
+  
+  React.useEffect(() => {
+    if (user?.id) {
+      const preferredModel = aiService.getModeloPreferido(user.id.toString());
+      setModelName(preferredModel);
     }
-    
-    setActiveTab(id);
-  };
+  }, [user]);
   
   return (
-    <div className="flex h-screen bg-background">
-      {/* Sidebar */}
-      <div className="w-64 bg-muted border-r flex flex-col">
-        <div className="p-4 border-b">
-          <div className="flex items-center justify-center mb-2">
-            {/* Company logo placeholder */}
-            <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
-              {user.name.charAt(0)}
-            </div>
+    <div className="min-h-screen bg-gray-50 flex flex-col">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b">
+        <div className="container mx-auto px-4 py-3 flex justify-between items-center">
+          <div className="flex items-center space-x-2">
+            <div className="font-bold text-xl text-primary">IAprópria</div>
           </div>
-          <div className="text-center font-semibold">{user.name}</div>
+          
+          <div className="flex items-center space-x-4">
+            <div className="text-sm text-muted-foreground hidden md:block">
+              Modelo: <span className="font-medium">{modelName.split('/').pop() || "Não selecionado"}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <User className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium">{user?.nome || "Usuário"}</span>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => onLogout(true)}>
+              <LogOut className="h-4 w-4 mr-1" />
+              <span>Sair</span>
+            </Button>
+          </div>
         </div>
-        
-        <div className="flex-1 overflow-auto py-2">
-          <nav className="space-y-1 px-2">
-            {menuItems.map((item) => (
-              <Button
-                key={item.id}
-                variant={activeTab === item.id ? "secondary" : "ghost"}
-                className={cn(
-                  "w-full justify-start",
-                  activeTab === item.id ? "bg-secondary" : ""
-                )}
-                onClick={() => handleMenuItemClick(item.id)}
-              >
-                <item.icon className="mr-2 h-4 w-4" />
-                {item.label}
-              </Button>
-            ))}
-          </nav>
+      </header>
+      
+      {/* Navigation Tabs */}
+      <div className="bg-white border-b">
+        <div className="container mx-auto px-4">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="w-full justify-start overflow-x-auto py-0">
+              <TabsTrigger value="atendimento" className="py-3">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Atendimento IA
+              </TabsTrigger>
+              <TabsTrigger value="conversa" className="py-3">
+                <MessageSquare className="h-4 w-4 mr-2" />
+                Conversa IA
+              </TabsTrigger>
+              <TabsTrigger value="filtros" className="py-3">
+                <Filter className="h-4 w-4 mr-2" />
+                Filtros
+              </TabsTrigger>
+              <TabsTrigger value="gerar-imagem" className="py-3">
+                <Image className="h-4 w-4 mr-2" />
+                Gerar Imagem
+              </TabsTrigger>
+              <TabsTrigger value="enviar-arquivo" className="py-3">
+                <Upload className="h-4 w-4 mr-2" />
+                Upload
+              </TabsTrigger>
+              <TabsTrigger value="deletar-arquivo" className="py-3">
+                <Trash className="h-4 w-4 mr-2" />
+                Deletar
+              </TabsTrigger>
+              <TabsTrigger value="parametros" className="py-3">
+                <Settings className="h-4 w-4 mr-2" />
+                Configurações
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
         </div>
       </div>
       
-      {/* Main content */}
-      <div className="flex-1 overflow-auto">
-        {children}
-      </div>
+      {/* Main Content */}
+      <main className="flex-1 py-6">{children}</main>
+      
+      {/* Footer */}
+      <footer className="bg-white border-t py-4">
+        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+          &copy; {new Date().getFullYear()} IAprópria. Todos os direitos reservados.
+        </div>
+      </footer>
     </div>
   );
 }

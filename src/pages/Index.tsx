@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,100 +26,137 @@ import { MessageList } from '@/components/chat/MessageList';
 import { UploadForm } from '@/components/files/UploadForm';
 import { FileList } from '@/components/files/FileList';
 import { Settings } from '@/components/settings/Settings';
-import { ImageGenerator } from '@/components/generator/ImageGenerator';
+import { ImageGenerator } from '@/components/images/ImageGenerator';
+import { ChatInput } from '@/components/chat/ChatInput';
+import { DeleteDocument } from '@/components/files/DeleteDocument';
+import { MetadataFilter } from '@/components/metadata/MetadataFilter';
+import { LoginForm } from '@/components/auth/LoginForm';
+import { RegisterForm } from '@/components/auth/RegisterForm';
+import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
+import { authService } from '@/services/authService';
+import { aiService } from '@/services/aiService';
+
+interface Message {
+  pergunta: string;
+  resposta: string;
+}
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState<string>("atendimento");
-  const [messages, setMessages] = useState<{pergunta: string; resposta: string}[]>([]);
-  const [inputValue, setInputValue] = useState<string>("");
-  const [urlMode, setUrlMode] = useState<boolean>(false);
-  const [urlInput, setUrlInput] = useState<string>("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [authMode, setAuthMode] = useState<"login" | "register" | "forgot">("login");
   
-  // Mock authentication state - in a real app, this would come from an auth context
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(true);
-  const [user, setUser] = useState({ id: 1, name: "John Doe" });
-
-  // Mock login function
-  const handleLogin = (email: string, password: string) => {
-    // In a real app, this would call an API
-    setIsAuthenticated(true);
-    setUser({ id: 1, name: "John Doe" });
-    toast({
-      title: "Login successful",
-      description: "Welcome back!",
-    });
+  // Estado de autenticação
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [userId, setUserId] = useState<string>("");
+  const [user, setUser] = useState<any>(null);
+  
+  // Estado para metadados e filtros
+  const [activeFilters, setActiveFilters] = useState<Record<string, string[]>>({});
+  
+  // Verificar autenticação ao carregar a página
+  useEffect(() => {
+    const currentUser = authService.getUsuarioAtual();
+    if (currentUser) {
+      setIsAuthenticated(true);
+      setUser(currentUser);
+      setUserId(String(currentUser.id));
+    }
+  }, []);
+  
+  // Funções de autenticação
+  const handleLogin = () => {
+    const currentUser = authService.getUsuarioAtual();
+    if (currentUser) {
+      setIsAuthenticated(true);
+      setUser(currentUser);
+      setUserId(String(currentUser.id));
+    }
   };
-
-  // Mock logout function
+  
   const handleLogout = (saveChatHistory: boolean = true) => {
-    if (saveChatHistory) {
-      // In a real app, this would call an API to save chat history
+    if (saveChatHistory && messages.length > 0) {
+      // Em uma aplicação real, aqui salvaríamos o histórico da conversa
       toast({
-        title: "Chat history saved",
-        description: "Your conversation has been saved successfully.",
+        title: "Histórico salvo",
+        description: "Seu histórico de conversa foi salvo com sucesso."
       });
     }
+    
+    authService.logout();
     setIsAuthenticated(false);
-    setUser({ id: 0, name: "" });
+    setUser(null);
+    setUserId("");
+  };
+  
+  // Função para lidar com envio de mensagens
+  const handleSendMessage = async (message: string, urls?: string[]) => {
+    // Adicionar a mensagem do usuário à lista
+    const newMessage: Message = { pergunta: message, resposta: "" };
+    setMessages(prevMessages => [...prevMessages, newMessage]);
+    
+    try {
+      // Processar a resposta da IA
+      const response = await aiService.sendMessage(message, messages);
+      
+      // Atualizar a mensagem com a resposta
+      setMessages(prevMessages => {
+        const updatedMessages = [...prevMessages];
+        updatedMessages[updatedMessages.length - 1].resposta = response;
+        return updatedMessages;
+      });
+    } catch (error) {
+      setMessages(prevMessages => {
+        const updatedMessages = [...prevMessages];
+        updatedMessages[updatedMessages.length - 1].resposta = 
+          "Erro ao processar mensagem. Por favor, tente novamente.";
+        return updatedMessages;
+      });
+    }
   };
 
-  // Mock chat function
-  const handleSendMessage = () => {
-    if (!inputValue.trim()) return;
-
-    // Add user message to chat
-    const newMessages = [...messages, { pergunta: inputValue, resposta: "" }];
-    setMessages(newMessages);
-    
-    // Simulate API response
-    setTimeout(() => {
-      const response = `This is a simulated response to your question: "${inputValue}"`;
-      const updatedMessages = [...newMessages];
-      updatedMessages[updatedMessages.length - 1].resposta = response;
-      setMessages(updatedMessages);
-    }, 1000);
-    
-    setInputValue("");
-  };
-
+  // Se o usuário não estiver autenticado, mostrar tela de login
   if (!isAuthenticated) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <Card className="w-[400px]">
+        <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-center">Login</CardTitle>
+            <CardTitle className="text-center">
+              {authMode === "login" 
+                ? "Login" 
+                : authMode === "register" 
+                ? "Cadastro" 
+                : "Recuperação de Senha"}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={(e) => { e.preventDefault(); handleLogin("user@example.com", "password"); }}>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Input
-                    id="email"
-                    placeholder="Email"
-                    type="email"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Input
-                    id="password"
-                    placeholder="Password"
-                    type="password"
-                    required
-                  />
-                </div>
-                <Button type="submit" className="w-full">
-                  Login
-                </Button>
-              </div>
-            </form>
+            {authMode === "login" && (
+              <LoginForm 
+                onLogin={handleLogin} 
+                onForgotPassword={() => setAuthMode("forgot")} 
+                onRegister={() => setAuthMode("register")}
+              />
+            )}
+            
+            {authMode === "register" && (
+              <RegisterForm 
+                onRegister={handleLogin} 
+                onCancel={() => setAuthMode("login")}
+              />
+            )}
+            
+            {authMode === "forgot" && (
+              <ForgotPasswordForm 
+                onCancel={() => setAuthMode("login")}
+              />
+            )}
           </CardContent>
         </Card>
       </div>
     );
   }
 
-  // Render main application if authenticated
+  // Se autenticado, mostrar a aplicação principal
   return (
     <AppLayout 
       user={user}
@@ -142,34 +179,11 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="flex items-center space-x-2">
-              <input 
-                type="checkbox" 
-                id="url-checkbox" 
-                checked={urlMode}
-                onChange={(e) => setUrlMode(e.target.checked)}
-                className="w-4 h-4"
-              />
-              <label htmlFor="url-checkbox">Extrair informações de um ou mais links</label>
-            </div>
-            
-            {urlMode && (
-              <Input 
-                placeholder="Digite os links desejados (separados por vírgula)"
-                value={urlInput}
-                onChange={(e) => setUrlInput(e.target.value)}
-              />
-            )}
-            
             <div className="border rounded-lg p-4">
-              <Textarea 
-                placeholder="Digite sua mensagem..."
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                className="mb-2"
-                rows={3}
+              <ChatInput 
+                onSendMessage={handleSendMessage}
+                placeholder="Digite sua mensagem para o atendimento IA..."
               />
-              <Button onClick={handleSendMessage}>Enviar</Button>
             </div>
             
             <MessageList messages={messages} />
@@ -180,24 +194,31 @@ const Index = () => {
           <div className="space-y-4">
             <h2 className="text-2xl font-bold">Conversa IA</h2>
             <div className="border rounded-lg p-4">
-              <Textarea 
-                placeholder="Digite sua mensagem..."
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                className="mb-2"
-                rows={3}
+              <ChatInput 
+                onSendMessage={handleSendMessage}
+                placeholder="Digite sua mensagem para conversação..."
               />
-              <Button onClick={handleSendMessage}>Enviar</Button>
             </div>
             <MessageList messages={messages} />
           </div>
+        )}
+        
+        {activeTab === "filtros" && (
+          <MetadataFilter 
+            userId={userId}
+            onFilterChange={setActiveFilters}
+          />
         )}
         
         {activeTab === "gerar-imagem" && <ImageGenerator />}
         
         {activeTab === "enviar-arquivo" && <UploadForm />}
         
-        {activeTab === "deletar-arquivo" && <FileList />}
+        {activeTab === "deletar-arquivo" && (
+          <DeleteDocument 
+            userId={userId}
+          />
+        )}
         
         {activeTab === "parametros" && <Settings />}
       </div>
