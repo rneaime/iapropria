@@ -13,14 +13,20 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { FileList } from './FileList';
+import { UpsertForm } from './UpsertForm';
 import { 
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { authService } from '@/services/authService';
 
-export function UploadForm() {
+interface UploadFormProps {
+  userId?: string;
+}
+
+export function UploadForm({ userId = "1" }: UploadFormProps) {
   const [folderPath, setFolderPath] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   
@@ -71,7 +77,7 @@ export function UploadForm() {
   
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Enviar Arquivo</h2>
+      <h2 className="text-2xl font-bold">Gerenciamento de Arquivos</h2>
       
       <Accordion type="single" collapsible className="w-full">
         <AccordionItem value="arquivos-salvos">
@@ -143,6 +149,15 @@ export function UploadForm() {
                 </Button>
               </CardFooter>
             </Card>
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+      
+      <Accordion type="single" collapsible className="w-full" defaultValue="upsert">
+        <AccordionItem value="upsert">
+          <AccordionTrigger>Processamento de Arquivos (Upsert)</AccordionTrigger>
+          <AccordionContent>
+            <UpsertForm userId={userId} folderPath={folderPath} />
           </AccordionContent>
         </AccordionItem>
       </Accordion>

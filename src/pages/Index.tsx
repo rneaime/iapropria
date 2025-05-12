@@ -212,7 +212,7 @@ const Index = () => {
         
         {activeTab === "gerar-imagem" && <ImageGenerator />}
         
-        {activeTab === "enviar-arquivo" && <UploadForm />}
+        {activeTab === "enviar-arquivo" && <UploadForm userId={userId} />}
         
         {activeTab === "deletar-arquivo" && (
           <DeleteDocument 
