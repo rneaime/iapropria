@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -12,6 +12,7 @@ export function AppearanceSettings() {
   const [theme, setTheme] = useState<string>("light");
   const [fontSize, setFontSize] = useState<string>("medium");
   const [compactMode, setCompactMode] = useState<boolean>(false);
+  const [burgundyTheme, setBurgundyTheme] = useState<boolean>(false);
   const [saving, setSaving] = useState<boolean>(false);
 
   const handleSaveAppearance = () => {
@@ -26,6 +27,16 @@ export function AppearanceSettings() {
       setSaving(false);
     }, 1000);
   };
+
+  useEffect(() => {
+    if (burgundyTheme) {
+      document.documentElement.style.setProperty('--primary', '91 25% 31%'); // #5b3746 in hsl
+      document.documentElement.style.setProperty('--primary-foreground', '0 0% 100%');
+    } else {
+      document.documentElement.style.setProperty('--primary', '222.2 47.4% 11.2%'); // Original dark value
+      document.documentElement.style.setProperty('--primary-foreground', '210 40% 98%');
+    }
+  }, [burgundyTheme]);
   
   return (
     <Card>
@@ -80,12 +91,25 @@ export function AppearanceSettings() {
             onCheckedChange={setCompactMode}
           />
         </div>
+
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="font-medium text-sm">Tema Bordô (IAprópria)</p>
+            <p className="text-xs text-muted-foreground">
+              Utiliza o tema bordô (#5b3746) característico da IAprópria
+            </p>
+          </div>
+          <Switch 
+            checked={burgundyTheme} 
+            onCheckedChange={setBurgundyTheme}
+          />
+        </div>
         
         <div className="pt-4">
           <Button 
             onClick={handleSaveAppearance} 
             disabled={saving}
-            className="w-full"
+            className={`w-full ${burgundyTheme ? 'bg-[#5b3746] hover:bg-[#4a2c38]' : ''}`}
           >
             {saving ? "Salvando..." : "Salvar Personalização"}
           </Button>
