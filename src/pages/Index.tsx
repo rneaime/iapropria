@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -19,6 +20,7 @@ import { MetadataFilter } from '@/components/metadata/MetadataFilter';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
 import { ForgotPasswordForm } from '@/components/auth/ForgotPasswordForm';
+import { LoginChat } from '@/components/auth/LoginChat';
 import { HistoryView } from '@/components/history/HistoryView';
 import { HelpCenter } from '@/components/help/HelpCenter';
 import { authService } from '@/services/authService';
@@ -106,7 +108,7 @@ const Index = () => {
   // Se o usuário não estiver autenticado, mostrar tela de login
   if (!isAuthenticated) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-center">
@@ -136,6 +138,8 @@ const Index = () => {
             )}
           </CardContent>
         </Card>
+        
+        <LoginChat />
       </div>
     );
   }
