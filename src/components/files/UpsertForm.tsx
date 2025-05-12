@@ -260,7 +260,7 @@ export function UpsertForm({ userId, folderPath }: UpsertFormProps) {
                     </div>
                   </div>
                   
-                  <h3 className="text-md font-semibold mt-4">Metadados</h3>
+                  <h3 className="text-lg font-semibold mt-4">Metadados</h3>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
