@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -24,7 +25,7 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
   
   return (
     <div className="min-h-screen bg-burgundy-subtle flex flex-col">
-      {/* Header - Using a slightly lighter burgundy */}
+      {/* Header - Using a lighter burgundy */}
       <header className="bg-burgundy-light text-white shadow-md">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center space-x-2">
@@ -52,35 +53,35 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
         <div className="container mx-auto px-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="w-full justify-start overflow-x-auto py-0 bg-burgundy">
-              <TabsTrigger value="atendimento" className="py-3 text-white data-[state=active]:bg-burgundy-light">
+              <TabsTrigger value="atendimento" className="py-3 text-white data-[state=active]:bg-burgundy-light data-[state=active]:text-white/90">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Atendimento IA
               </TabsTrigger>
-              <TabsTrigger value="conversa" className="py-3 text-white data-[state=active]:bg-burgundy-light">
+              <TabsTrigger value="conversa" className="py-3 text-white data-[state=active]:bg-burgundy-light data-[state=active]:text-white/90">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Conversa IA
               </TabsTrigger>
-              <TabsTrigger value="historico" className="py-3 text-white data-[state=active]:bg-burgundy-light">
+              <TabsTrigger value="historico" className="py-3 text-white data-[state=active]:bg-burgundy-light data-[state=active]:text-white/90">
                 <History className="h-4 w-4 mr-2" />
                 Histórico
               </TabsTrigger>
-              <TabsTrigger value="filtros" className="py-3 text-white data-[state=active]:bg-burgundy-light">
+              <TabsTrigger value="filtros" className="py-3 text-white data-[state=active]:bg-burgundy-light data-[state=active]:text-white/90">
                 <Filter className="h-4 w-4 mr-2" />
                 Filtros
               </TabsTrigger>
-              <TabsTrigger value="gerar-imagem" className="py-3 text-white data-[state=active]:bg-burgundy-light">
+              <TabsTrigger value="gerar-imagem" className="py-3 text-white data-[state=active]:bg-burgundy-light data-[state=active]:text-white/90">
                 <Image className="h-4 w-4 mr-2" />
                 Gerar Imagem
               </TabsTrigger>
-              <TabsTrigger value="enviar-arquivo" className="py-3 text-white data-[state=active]:bg-burgundy-light">
+              <TabsTrigger value="enviar-arquivo" className="py-3 text-white data-[state=active]:bg-burgundy-light data-[state=active]:text-white/90">
                 <Upload className="h-4 w-4 mr-2" />
                 Upload
               </TabsTrigger>
-              <TabsTrigger value="parametros" className="py-3 text-white data-[state=active]:bg-burgundy-light">
+              <TabsTrigger value="parametros" className="py-3 text-white data-[state=active]:bg-burgundy-light data-[state=active]:text-white/90">
                 <Settings className="h-4 w-4 mr-2" />
                 Configurações
               </TabsTrigger>
-              <TabsTrigger value="ajuda" className="py-3 text-white data-[state=active]:bg-burgundy-light">
+              <TabsTrigger value="ajuda" className="py-3 text-white data-[state=active]:bg-burgundy-light data-[state=active]:text-white/90">
                 <HelpCircle className="h-4 w-4 mr-2" />
                 Ajuda
               </TabsTrigger>

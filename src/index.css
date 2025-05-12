@@ -101,7 +101,7 @@
 }
 
 .bg-burgundy-light {
-  background-color: #7a495e;
+  background-color: #7a495e; /* Cor mais clara para o header */
 }
 
 .bg-burgundy-dark {
