@@ -57,7 +57,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onLogin, onForgotPassword,
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold">Login</h1>
+        <h1 className="text-3xl font-bold">Acesso</h1>
         <p className="text-muted-foreground mt-2">
           Acesse sua conta para continuar
         </p>

@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
+import { Trash } from "lucide-react";
 
 interface File {
   id: string;
@@ -22,6 +23,7 @@ export function FileList({ folderPath }: FileListProps) {
   ]);
   
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedFiles, setSelectedFiles] = useState<string[]>([]);
   
   const handleDeleteFile = (file: File) => {
     // In a real app, this would call an API to delete the file
@@ -35,6 +37,9 @@ export function FileList({ folderPath }: FileListProps) {
     if (selectedFile?.id === file.id) {
       setSelectedFile(null);
     }
+    
+    // Remove from selected files if it's there
+    setSelectedFiles(selectedFiles.filter(id => id !== file.id));
   };
   
   const handleViewFile = (file: File) => {
@@ -43,6 +48,28 @@ export function FileList({ folderPath }: FileListProps) {
       title: "Visualizando arquivo",
       description: `Abrindo ${file.name}...`,
     });
+  };
+  
+  const handleToggleSelectFile = (fileId: string) => {
+    setSelectedFiles(prev => 
+      prev.includes(fileId) 
+        ? prev.filter(id => id !== fileId)
+        : [...prev, fileId]
+    );
+  };
+  
+  const handleDeleteSelected = () => {
+    // Delete all selected files
+    const newFiles = files.filter(file => !selectedFiles.includes(file.id));
+    setFiles(newFiles);
+    
+    toast({
+      title: "Arquivos deletados",
+      description: `${selectedFiles.length} arquivos foram removidos com sucesso!`,
+    });
+    
+    setSelectedFiles([]);
+    setSelectedFile(null);
   };
   
   if (!folderPath) {
@@ -65,31 +92,52 @@ export function FileList({ folderPath }: FileListProps) {
     <div className="space-y-4">
       <div>
         <h3 className="text-sm font-medium mb-2">Caminho da pasta: {folderPath}</h3>
-        <select
-          className="w-full p-2 border rounded"
-          value={selectedFile?.id || ""}
-          onChange={(e) => {
-            const file = files.find(f => f.id === e.target.value);
-            setSelectedFile(file || null);
-          }}
-        >
-          <option value="">Selecione um arquivo</option>
-          {files.map(file => (
-            <option key={file.id} value={file.id}>
-              {file.name}
-            </option>
-          ))}
-        </select>
+        
+        <div className="border rounded-md p-2">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="font-medium">Arquivos disponíveis</h4>
+            {selectedFiles.length > 0 && (
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={handleDeleteSelected}
+              >
+                <Trash className="h-4 w-4 mr-1" />
+                Deletar selecionados ({selectedFiles.length})
+              </Button>
+            )}
+          </div>
+          
+          <div className="space-y-1">
+            {files.map(file => (
+              <div key={file.id} className="flex items-center justify-between p-2 hover:bg-muted/50 rounded-md">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    className="mr-2"
+                    checked={selectedFiles.includes(file.id)}
+                    onChange={() => handleToggleSelectFile(file.id)}
+                  />
+                  <span className="cursor-pointer" onClick={() => handleViewFile(file)}>
+                    {file.name}
+                  </span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => handleDeleteFile(file)}
+                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                >
+                  <Trash className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+        </div>
       </div>
       
       {selectedFile && (
         <div className="flex space-x-2">
-          <Button 
-            variant="destructive" 
-            onClick={() => handleDeleteFile(selectedFile)}
-          >
-            Deletar
-          </Button>
           <Button 
             variant="outline"
             onClick={() => handleViewFile(selectedFile)}

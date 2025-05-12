@@ -15,10 +15,10 @@
     --popover-foreground: 222.2 84% 4.9%;
 
     --primary: 91 25% 31%;
-    --primary-foreground: 0 0% 100%;
+    --primary-foreground: 0 0% 98%;
 
     --secondary: 91 15% 40%;
-    --secondary-foreground: 0 0% 100%;
+    --secondary-foreground: 0 0% 98%;
 
     --muted: 91 10% 95%;
     --muted-foreground: 91 25% 30%;
@@ -144,4 +144,3 @@ pre {
 code {
   @apply font-mono text-sm;
 }
-

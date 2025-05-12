@@ -16,7 +16,6 @@ import { FileList } from '@/components/files/FileList';
 import { Settings } from '@/components/settings/Settings';
 import { ImageGenerator } from '@/components/images/ImageGenerator';
 import { ChatInput } from '@/components/chat/ChatInput';
-import { DeleteDocument } from '@/components/files/DeleteDocument';
 import { MetadataFilter } from '@/components/metadata/MetadataFilter';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
@@ -112,11 +111,7 @@ const Index = () => {
         <Card className="w-full max-w-md">
           <CardHeader>
             <CardTitle className="text-center">
-              {authMode === "login" 
-                ? "Login" 
-                : authMode === "register" 
-                ? "Cadastro" 
-                : "Recuperação de Senha"}
+              {authMode === "register" ? "Cadastro" : authMode === "forgot" ? "Recuperação de Senha" : "Acesso"}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -207,12 +202,6 @@ const Index = () => {
         {activeTab === "gerar-imagem" && <ImageGenerator />}
         
         {activeTab === "enviar-arquivo" && <UploadForm userId={userId} />}
-        
-        {activeTab === "deletar-arquivo" && (
-          <DeleteDocument 
-            userId={userId}
-          />
-        )}
         
         {activeTab === "parametros" && <Settings />}
         
