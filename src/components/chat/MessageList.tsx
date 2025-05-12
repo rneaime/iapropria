@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { CodeBlock } from '@/components/ui/code-block';
 
 interface Message {
   pergunta: string;
@@ -8,38 +9,74 @@ interface Message {
 
 interface MessageListProps {
   messages: Message[];
-  className?: string;
 }
 
-export function MessageList({ messages, className = '' }: MessageListProps) {
-  if (messages.length === 0) {
-    return (
-      <div className="text-center text-muted-foreground p-8">
-        Nenhuma mensagem ainda. Inicie uma conversa acima.
-      </div>
-    );
-  }
+export const MessageList: React.FC<MessageListProps> = ({ messages }) => {
+  // Função para detectar e formatar blocos de código
+  const formatMessage = (text: string) => {
+    if (!text) return [];
+    
+    // Regex para encontrar blocos de código (texto com múltiplas linhas de código)
+    const codeBlockRegex = /```(?:(\w+)\n)?([\s\S]*?)```/g;
+    
+    // Dividir a mensagem em partes (texto e blocos de código)
+    let lastIndex = 0;
+    const parts = [];
+    let match;
+    
+    while ((match = codeBlockRegex.exec(text)) !== null) {
+      // Adicionar texto antes do bloco de código
+      if (match.index > lastIndex) {
+        parts.push({
+          type: 'text',
+          content: text.substring(lastIndex, match.index)
+        });
+      }
+      
+      // Adicionar o bloco de código
+      const language = match[1] || 'typescript';
+      const code = match[2].trim();
+      
+      parts.push({
+        type: 'code',
+        content: code,
+        language
+      });
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Adicionar texto restante
+    if (lastIndex < text.length) {
+      parts.push({
+        type: 'text',
+        content: text.substring(lastIndex)
+      });
+    }
+    
+    // Se não encontrou blocos de código, retorna o texto original
+    return parts.length > 0 ? parts : [{ type: 'text', content: text }];
+  };
 
   return (
-    <div className={`space-y-4 pt-4 ${className}`}>
-      {messages.slice().reverse().map((message, index) => (
-        <div key={index} className="border rounded-lg p-4 bg-background shadow-sm">
-          <div className="font-semibold mb-2">
-            <span className="text-primary italic">Pergunta:</span> {message.pergunta}
+    <div className="space-y-4 mt-4">
+      {messages.map((message, index) => (
+        <div key={index} className="border rounded-lg p-4 bg-white shadow-sm">
+          <h3 className="font-medium text-burgundy">Pergunta:</h3>
+          <p className="mb-4 whitespace-pre-wrap">{message.pergunta}</p>
+          
+          <h3 className="font-medium text-burgundy">Resposta:</h3>
+          <div className="whitespace-pre-wrap">
+            {formatMessage(message.resposta).map((part, i) => {
+              if (part.type === 'code') {
+                return <CodeBlock key={i} code={part.content} language={part.language} />;
+              } else {
+                return <p key={i}>{part.content}</p>;
+              }
+            })}
           </div>
-          <div className="mt-2">
-            <span className="font-semibold text-secondary">Resposta:</span> {message.resposta || (
-              <div className="flex items-center mt-2">
-                <div className="animate-pulse bg-muted h-3 w-3 mr-1 rounded-full"></div>
-                <div className="animate-pulse bg-muted h-3 w-3 mx-1 rounded-full animation-delay-200"></div>
-                <div className="animate-pulse bg-muted h-3 w-3 ml-1 rounded-full animation-delay-500"></div>
-                <span className="text-muted-foreground italic ml-2">Aguardando resposta...</span>
-              </div>
-            )}
-          </div>
-          {index < messages.length - 1 && <div className="border-t mt-2 pt-2"></div>}
         </div>
       ))}
     </div>
   );
-}
+};
