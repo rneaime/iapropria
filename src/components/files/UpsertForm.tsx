@@ -20,14 +20,12 @@ interface UpsertFormProps {
   userId: string;
   folderPath?: string;
   uploadedFile?: {id: string, name: string, path: string} | null;
-  initialMetadata?: UpsertMetadata;
 }
 
 export function UpsertForm({ 
   userId, 
   folderPath,
-  uploadedFile,
-  initialMetadata
+  uploadedFile
 }: UpsertFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
@@ -36,7 +34,7 @@ export function UpsertForm({
   const [selectedSavedFile, setSelectedSavedFile] = useState<string>('');
   
   // Metadados para o upsert
-  const [metadata, setMetadata] = useState<UpsertMetadata>(initialMetadata || {
+  const [metadata, setMetadata] = useState<UpsertMetadata>({
     tipo_documento: '',
     departamento: '',
     categoria: '',
