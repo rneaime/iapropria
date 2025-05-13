@@ -1,4 +1,3 @@
-
 import { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } from "../config/env";
 
 // Simulação do serviço de usuário para frontend
@@ -104,4 +103,32 @@ export const userService = {
     usuariosSimulados.splice(index, 1);
     return Promise.resolve(true);
   }
+};
+
+export const getUsers = async () => {
+  // Placeholder implementation until proper backend is connected
+  return [
+    {
+      id: 1,
+      nome: "John Doe",
+      email: "john@example.com",
+      telefone: "(11) 99999-9999",
+      nome_empresa: "Tech Company",
+      cidade: "São Paulo",
+      estado: "SP",
+      pais: "Brasil",
+      logado: true
+    },
+    {
+      id: 2,
+      nome: "Jane Smith",
+      email: "jane@example.com",
+      telefone: "(11) 88888-8888",
+      nome_empresa: "Design Studio",
+      cidade: "Rio de Janeiro",
+      estado: "RJ",
+      pais: "Brasil",
+      logado: false
+    }
+  ];
 };

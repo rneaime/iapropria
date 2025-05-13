@@ -5,7 +5,7 @@ import { ApiKeyManager } from './ApiKeyManager';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { ExternalLink, HelpCircle, Info } from "lucide-react";
+import { AlertCircle, CheckCircle, ExternalLink, HelpCircle, Info } from "lucide-react";
 import { configService } from "@/services/configService";
 
 export function ApiConnector() {
