@@ -83,7 +83,7 @@ export function AppSidebar({ activeTab, setActiveTab }: AppSidebarProps) {
     }
   };
 
-  // Versão mobile com menu em Sheet
+  // Versão mobile com botão de menu que abre Sheet
   if (isMobile) {
     return (
       <div className="w-full bg-burgundy-light py-2 px-4 flex justify-end">
