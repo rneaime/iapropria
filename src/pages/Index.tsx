@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -10,12 +9,10 @@ import {
 } from "@/components/ui/card";
 import { toast } from "@/components/ui/use-toast";
 import { AppLayout } from '@/components/layout/AppLayout';
-import { MessageList } from '@/components/chat/MessageList';
 import { UploadForm } from '@/components/files/UploadForm';
 import { FileList } from '@/components/files/FileList';
 import { Settings } from '@/components/settings/Settings';
 import { ImageGenerator } from '@/components/images/ImageGenerator';
-import { ChatInput } from '@/components/chat/ChatInput';
 import { MetadataFilter } from '@/components/metadata/MetadataFilter';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { RegisterForm } from '@/components/auth/RegisterForm';
@@ -26,7 +23,6 @@ import { HelpCenter } from '@/components/help/HelpCenter';
 import { ChatInterface } from '@/components/chat/ChatInterface';
 import { authService } from '@/services/authService';
 import { aiService } from '@/services/aiService';
-import { convertToStandardMessages } from '@/utils/chatUtils';
 
 interface Message {
   pergunta: string;
@@ -147,8 +143,17 @@ const Index = () => {
     );
   }
 
-  // Converter mensagens para o formato padrão
-  const standardMessages = convertToStandardMessages(messages);
+  // Converter mensagens para o formato padrão para o ChatInterface
+  const standardMessages = messages.flatMap(msg => [
+    { content: msg.pergunta, sender: 'user' as const },
+    { content: msg.resposta, sender: 'assistant' as const }
+  ]);
+
+  // Adicionar mensagem inicial de boas-vindas se não houver mensagens
+  const initialMessages = [
+    { content: "Olá! Sou o assistente da IAprópria. Como posso ajudá-lo hoje?", sender: 'assistant' as const },
+    ...standardMessages
+  ];
 
   // Se autenticado, mostrar a aplicação principal
   return (
@@ -173,16 +178,15 @@ const Index = () => {
               </div>
             </div>
             
-            <ChatInterface
-              title="Assistente de Atendimento IAprópria"
-              initialMessages={[
-                { content: "Olá! Sou o assistente da IAprópria. Como posso ajudá-lo hoje?", sender: 'assistant' },
-                ...standardMessages
-              ]}
-              onSendMessage={handleSendMessage}
-              isLoading={isLoading}
-              placeholder="Digite sua mensagem para o atendimento IA..."
-            />
+            <div className="flex-1">
+              <ChatInterface
+                title="Assistente de Atendimento IAprópria"
+                initialMessages={initialMessages}
+                onSendMessage={handleSendMessage}
+                isLoading={isLoading}
+                placeholder="Digite sua pergunta..."
+              />
+            </div>
           </div>
         )}
         
@@ -190,16 +194,15 @@ const Index = () => {
           <div className="space-y-4 flex flex-col h-[calc(100vh-16rem)]">
             <h2 className="text-2xl font-bold">Conversa IA</h2>
             
-            <ChatInterface
-              title="Assistente de Conversa IAprópria"
-              initialMessages={[
-                { content: "Olá! Sou o assistente da IAprópria. Como posso ajudá-lo hoje?", sender: 'assistant' },
-                ...standardMessages
-              ]}
-              onSendMessage={handleSendMessage}
-              isLoading={isLoading}
-              placeholder="Digite sua mensagem para conversação..."
-            />
+            <div className="flex-1">
+              <ChatInterface
+                title="Assistente de Conversa IAprópria"
+                initialMessages={initialMessages}
+                onSendMessage={handleSendMessage}
+                isLoading={isLoading}
+                placeholder="Digite sua pergunta..."
+              />
+            </div>
           </div>
         )}
         
