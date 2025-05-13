@@ -2,6 +2,7 @@
 // Este arquivo gerencia a conexão com o banco de dados
 // No frontend, simula as operações; em um backend, realiza conexões reais
 import { DB_CONFIG } from '../config/env';
+import { toast } from '../hooks/use-toast';
 
 // Interface para unificar o comportamento de consulta
 interface DatabaseClient {
@@ -28,10 +29,13 @@ if (isServerEnvironment) {
       user: DB_CONFIG.USER,
       password: DB_CONFIG.PASSWORD,
       database: DB_CONFIG.NAME,
+      ssl: {
+        rejectUnauthorized: false // Necessário para alguns hosts como Hostinger
+      }
     });
     
     client = pool;
-    console.log('Conexão real com PostgreSQL estabelecida');
+    console.log('Conexão real com PostgreSQL estabelecida com:', DB_CONFIG.HOST);
   } catch (error) {
     console.error('Erro ao conectar com PostgreSQL:', error);
     // Fallback para simulação caso falhe

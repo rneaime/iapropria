@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import UserList from "./pages/UserList";
 
 // ScrollToTop component to handle scrolling on route change
 function ScrollToTop() {
@@ -37,6 +38,7 @@ const App = () => (
         <ScrollToTop />
         <Routes>
           <Route path="/" element={<Index />} />
+          <Route path="/users" element={<UserList />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
