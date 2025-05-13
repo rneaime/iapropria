@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { User, LogOut, Menu } from 'lucide-react';
+import { User, LogOut, Menu, PanelLeft } from 'lucide-react';
 import { aiService } from '@/services/aiService';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -24,6 +24,7 @@ interface AppLayoutProps {
 export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }: AppLayoutProps) {
   const [modelName, setModelName] = React.useState<string>("");
   const isMobile = useIsMobile();
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   
   React.useEffect(() => {
     if (user?.id) {
@@ -36,6 +37,10 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
       }
     }
   }, [user]);
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
   
   return (
     <SidebarProvider>
@@ -45,8 +50,17 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
           <header className="bg-burgundy-light text-white shadow-md">
             <div className="container mx-auto px-4 py-3 flex justify-between items-center">
               <div className="flex items-center space-x-2">
-                {isMobile && (
+                {isMobile ? (
                   <SidebarTrigger className="mr-2" />
+                ) : (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={toggleSidebar} 
+                    className="text-white hover:bg-burgundy p-1"
+                  >
+                    <PanelLeft className="h-4 w-4" />
+                  </Button>
                 )}
                 <div className="font-bold text-xl">IAprópria</div>
               </div>
@@ -71,13 +85,11 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
         </div>
         
         <div className="flex flex-1 pt-14">
-          {/* Sidebar for desktop */}
-          {!isMobile && (
-            <Sidebar variant="inset" side="left">
-              <SidebarContent>
-                <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-              </SidebarContent>
-            </Sidebar>
+          {/* Sidebar for desktop - fixed width and toggle visibility */}
+          {!isMobile && sidebarOpen && (
+            <div className="min-h-[calc(100vh-3.5rem)] bg-burgundy-light">
+              <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} onClose={toggleSidebar} />
+            </div>
           )}
           
           {/* Sidebar for mobile - will be triggered by SidebarTrigger */}
@@ -86,9 +98,9 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
           )}
           
           {/* Main content */}
-          <SidebarInset className="container mx-auto p-6 bg-burgundy-subtle">
+          <div className="container mx-auto p-6 bg-burgundy-subtle flex-1">
             {children}
-          </SidebarInset>
+          </div>
         </div>
         
         <footer className="bg-burgundy text-white py-4">
