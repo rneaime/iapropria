@@ -26,11 +26,31 @@ export function HelpCenter() {
       </div>
       
       <Tabs defaultValue="chat">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="chat">Chat de Ajuda</TabsTrigger>
-          <TabsTrigger value="faq">FAQ</TabsTrigger>
-          <TabsTrigger value="tutoriais">Tutoriais</TabsTrigger>
-          <TabsTrigger value="contato">Contato</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-4 bg-burgundy-light text-white">
+          <TabsTrigger 
+            value="chat" 
+            className="text-white data-[state=active]:bg-burgundy data-[state=active]:text-white data-[state=active]:shadow-sm hover:bg-burgundy-dark"
+          >
+            Chat de Ajuda
+          </TabsTrigger>
+          <TabsTrigger 
+            value="faq"
+            className="text-white data-[state=active]:bg-burgundy data-[state=active]:text-white data-[state=active]:shadow-sm hover:bg-burgundy-dark"
+          >
+            FAQ
+          </TabsTrigger>
+          <TabsTrigger 
+            value="tutoriais"
+            className="text-white data-[state=active]:bg-burgundy data-[state=active]:text-white data-[state=active]:shadow-sm hover:bg-burgundy-dark"
+          >
+            Tutoriais
+          </TabsTrigger>
+          <TabsTrigger 
+            value="contato"
+            className="text-white data-[state=active]:bg-burgundy data-[state=active]:text-white data-[state=active]:shadow-sm hover:bg-burgundy-dark"
+          >
+            Contato
+          </TabsTrigger>
         </TabsList>
         
         <TabsContent value="chat" className="pt-4">
