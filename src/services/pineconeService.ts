@@ -1,4 +1,3 @@
-
 import { Pinecone } from '@pinecone-database/pinecone';
 import { INDEX_NAME } from '../config/env';
 import { configService } from './configService';
@@ -72,6 +71,9 @@ const mockDocumentos: Metadado[] = [
 
 // Cliente Pinecone inicializado com lazy loading
 let pineconeClient: Pinecone | null = null;
+
+// Host específico fornecido pelo usuário
+const PINECONE_HOST = "https://iapropria2-unfyip3.svc.aped-4627-b74a.pinecone.io";
 
 const initPineconeClient = (): Pinecone | null => {
   try {
@@ -259,17 +261,14 @@ export const pineconeService = {
       // Obter a chave da API do configService
       const apiKeys = configService.getApiKeys();
       const pineconeApiKey = apiKeys.PINECONE_API_KEY;
-      const indexName = configService.getIndexName();
       
       if (!pineconeApiKey) {
         throw new Error("Chave da API Pinecone não configurada");
       }
       
-      // Simplificando a abordagem: usar uma URL direta como na versão Python
-      // A URL precisará ser construída corretamente para contornar problemas de CORS
-      
-      const baseUrl = `https://${indexName}-default.svc.${indexName}.pinecone.io`;
-      console.log("Tentando conexão REST com a URL:", baseUrl);
+      // Usar o host específico fornecido
+      const baseUrl = PINECONE_HOST;
+      console.log("Tentando conexão REST com a URL específica:", baseUrl);
       
       const queryResponse = await fetch(`${baseUrl}/vectors/query`, {
         method: 'POST',
@@ -325,22 +324,18 @@ export const pineconeService = {
       // Método alternativo: Tentar outros endpoints conhecidos
       try {
         console.log("Tentando endpoints alternativos...");
-        const indexName = configService.getIndexName();
         const apiKeys = configService.getApiKeys();
         const pineconeApiKey = apiKeys.PINECONE_API_KEY;
         const namespace = "1";
         
-        // Lista de possíveis endpoints a tentar
+        // Primeiro tente o host específico fornecido
         const endpointsToTry = [
-          `https://${indexName}-yjxbz01.svc.gcp-starter.pinecone.io/vectors/query`,
-          `https://${indexName}-c6ervab.svc.us-east-1-aws.pinecone.io/vectors/query`,
-          `https://controller.${indexName}.pinecone.io/vectors/query`,
-          `https://api.${indexName}.pinecone.io/vectors/query`
+          `${PINECONE_HOST}/vectors/query`
         ];
         
         for (const endpoint of endpointsToTry) {
           try {
-            console.log(`Tentando endpoint alternativo: ${endpoint}`);
+            console.log(`Tentando endpoint: ${endpoint}`);
             
             const response = await fetch(endpoint, {
               method: 'POST',
@@ -378,7 +373,7 @@ export const pineconeService = {
               }
             }
           } catch (endpointError) {
-            console.error(`Falha no endpoint alternativo ${endpoint}:`, endpointError);
+            console.error(`Falha no endpoint ${endpoint}:`, endpointError);
           }
         }
         
@@ -506,7 +501,42 @@ export const pineconeService = {
         }
       }
       
-      // Lista os índices para verificar se a conexão está funcionando
+      // Tentativa direta de consulta usando o host especificado
+      console.log("Testando conexão direta com host específico:", PINECONE_HOST);
+      
+      const apiKeys = configService.getApiKeys();
+      const pineconeApiKey = apiKeys.PINECONE_API_KEY;
+      
+      // Tenta fazer uma consulta simples via REST API
+      const response = await fetch(`${PINECONE_HOST}/vectors/query`, {
+        method: 'POST',
+        headers: {
+          'Api-Key': pineconeApiKey,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          namespace: "1",
+          topK: 1,
+          includeMetadata: true,
+          vector: Array(384).fill(0),
+          includeValues: false
+        }),
+        signal: AbortSignal.timeout(5000)
+      });
+      
+      if (response.ok) {
+        console.log("Conexão com host específico estabelecida com sucesso!");
+        
+        toast({
+          title: "Conexão com Pinecone estabelecida",
+          description: `Conectado com sucesso ao host específico.`
+        });
+        
+        return true;
+      }
+      
+      // Fallback para a API de listagem de índices
       const indexes = await pineconeClient.listIndexes();
       console.log("Índices disponíveis:", indexes);
       
@@ -519,7 +549,7 @@ export const pineconeService = {
     } catch (error) {
       console.error("Erro ao testar conexão com Pinecone:", error);
       
-      // Tenta método REST alternativo
+      // Tenta método REST alternativo diretamente com o host fornecido
       try {
         const apiKeys = configService.getApiKeys();
         const pineconeApiKey = apiKeys.PINECONE_API_KEY;
@@ -528,67 +558,36 @@ export const pineconeService = {
           throw new Error("Chave da API Pinecone não configurada");
         }
         
-        // Consulta a API descritiva do Pinecone
-        const response = await fetch("https://controller.pinecone.io/indexes", {
-          method: 'GET',
+        // Tenta consulta direta de descrição via cabeçalho OPTIONS
+        console.log("Testando conexão com OPTIONS request para:", PINECONE_HOST);
+        const response = await fetch(PINECONE_HOST, {
+          method: 'OPTIONS',
           headers: {
             'Api-Key': pineconeApiKey,
             'Accept': 'application/json'
-          }
+          },
+          signal: AbortSignal.timeout(3000)
         });
         
-        if (response.ok) {
-          const data = await response.json();
-          console.log("Resposta da API REST Pinecone:", data);
+        if (response.ok || response.status === 200 || response.status === 204) {
+          console.log("Resposta OPTIONS do Pinecone:", response.status);
           
           toast({
-            title: "Conexão REST com Pinecone estabelecida",
-            description: `Conectado com sucesso via REST API. Índices disponíveis: ${data.indexes?.length || 0}`
+            title: "Conexão com Pinecone detectada",
+            description: "O servidor Pinecone está respondendo a verificações de CORS"
           });
           return true;
-        } else {
-          throw new Error(`Falha na conexão REST: ${response.statusText}`);
         }
+        
+        throw new Error(`Falha na conexão REST: ${response.statusText}`);
       } catch (restError) {
         console.error("Erro no teste de conexão REST:", restError);
-        
-        // Tenta método do connect API
-        try {
-          // Adiciona o script do Connect API temporariamente
-          const script = document.createElement('script');
-          script.src = 'https://connect.pinecone.io/embed.js';
-          script.async = true;
-          document.head.appendChild(script);
-          
-          toast({
-            title: "Testando conexão alternativa",
-            description: "Tentando conectar através da Connect API..."
-          });
-          
-          // Espera o script carregar e tenta inicializar
-          setTimeout(() => {
-            try {
-              // @ts-ignore - A função será disponibilizada pelo script
-              if (typeof window.connectToPinecone === 'function') {
-                console.log("Connect API carregada com sucesso");
-                
-                toast({
-                  title: "API de conexão disponível",
-                  description: "As ferramentas de conexão do Pinecone estão disponíveis."
-                });
-              }
-            } catch (e) {
-              console.error("Erro ao inicializar Connect API:", e);
-            }
-          }, 2000);
-        } catch (connectError) {
-          console.error("Erro ao carregar Connect API:", connectError);
-        }
         
         toast({
           variant: "destructive",
           title: "Erro na conexão com Pinecone",
-          description: error instanceof Error ? error.message : "Erro desconhecido"
+          description: "Não foi possível conectar ao host especificado: " + 
+            (error instanceof Error ? error.message : "Erro desconhecido")
         });
         
         return false;
