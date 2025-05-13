@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/accordion";
 import { toast } from "@/hooks/use-toast";
 import { pineconeService } from "@/services/pineconeService";
-import { Trash, Save, CheckSquare, Filter } from "lucide-react";
+import { Trash, Save, CheckSquare, Filter, Database } from "lucide-react";
 
 interface MetadataFilterProps {
   userId: string;
@@ -21,6 +21,7 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
   const [documents, setDocuments] = useState<any[]>([]);
   const [filters, setFilters] = useState<Record<string, string[]>>({});
   const [loading, setLoading] = useState(true);
+  const [retrying, setRetrying] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [expandedAccordions, setExpandedAccordions] = useState<string[]>([]);
@@ -31,42 +32,57 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
     'subcategoria', 'status', 'tipo_documento', 'filtro8', 'filtro9', 'filtro10'
   ];
   
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        console.log("Buscando documentos para Filtro de Metadados, userId:", userId);
+  const fetchData = async (retry: boolean = false) => {
+    try {
+      if (retry) {
+        setRetrying(true);
+      } else {
         setLoading(true);
-        const docs = await pineconeService.buscarDocumentos(userId);
-        console.log("Documentos recebidos:", docs);
-        setDocuments(docs);
-        
-        // Carregar filtros salvos
-        const savedFilters = pineconeService.getFiltros(userId);
-        console.log("Filtros salvos:", savedFilters);
-        setFilters(savedFilters);
-        
-        if (onFilterChange) {
-          onFilterChange(savedFilters);
-        }
-        
-        // Configurar os primeiros acordeões expandidos
-        const columnsWithData = filterColumns.filter(column => 
-          docs.some(doc => doc[column]));
-        if (columnsWithData.length > 0) {
-          setExpandedAccordions([columnsWithData[0]]);
-        }
-      } catch (error) {
-        console.error("Erro ao carregar dados:", error);
-        toast({
-          title: "Erro",
-          description: "Não foi possível carregar os metadados.",
-          variant: "destructive"
-        });
-      } finally {
-        setLoading(false);
       }
-    };
-    
+      
+      console.log("Buscando documentos para Filtro de Metadados, userId:", userId);
+      
+      // Obter documentos do Pinecone
+      const docs = await pineconeService.buscarDocumentos(userId);
+      console.log("Documentos recebidos:", docs);
+      setDocuments(docs);
+      
+      // Carregar filtros salvos
+      const savedFilters = pineconeService.getFiltros(userId);
+      console.log("Filtros salvos:", savedFilters);
+      setFilters(savedFilters);
+      
+      if (onFilterChange) {
+        onFilterChange(savedFilters);
+      }
+      
+      // Configurar os primeiros acordeões expandidos
+      const columnsWithData = filterColumns.filter(column => 
+        docs.some(doc => doc[column]));
+      if (columnsWithData.length > 0) {
+        setExpandedAccordions([columnsWithData[0]]);
+      }
+      
+      if (retry) {
+        toast({
+          title: "Dados atualizados",
+          description: `${docs.length} documentos carregados com sucesso.`
+        });
+      }
+    } catch (error) {
+      console.error("Erro ao carregar dados:", error);
+      toast({
+        title: "Erro",
+        description: "Não foi possível carregar os metadados do Pinecone.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+      setRetrying(false);
+    }
+  };
+  
+  useEffect(() => {
     fetchData();
   }, [userId, onFilterChange]);
   
@@ -197,11 +213,17 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
     });
   };
   
+  // Recarregar dados do Pinecone
+  const handleRefresh = () => {
+    fetchData(true);
+  };
+  
+  // Renderização do componente de carregamento
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center p-12">
         <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
-        <p className="text-lg font-medium">Carregando filtros de metadados...</p>
+        <p className="text-lg font-medium">Carregando filtros de metadados do Pinecone...</p>
       </div>
     );
   }
@@ -237,6 +259,15 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
         </div>
         <div className="flex space-x-2">
           <Button 
+            onClick={handleRefresh} 
+            disabled={retrying}
+            variant="outline"
+            className="flex items-center"
+          >
+            <Database className="mr-1 h-4 w-4" />
+            {retrying ? "Atualizando..." : "Atualizar dados"}
+          </Button>
+          <Button 
             onClick={handleSaveFilters} 
             disabled={saving}
             className="flex items-center"
@@ -262,6 +293,10 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
           <p className="text-muted-foreground">
             Não há documentos disponíveis para filtrar. Faça upload de arquivos primeiro.
           </p>
+          <Button className="mt-4" onClick={handleRefresh}>
+            <Database className="mr-2 h-4 w-4" />
+            Tentar carregar novamente
+          </Button>
         </div>
       ) : (
         <Accordion 
