@@ -27,7 +27,7 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
   // Colunas para filtrar
   const filterColumns = [
     'nome_arquivo', 'categoria', 'departamento', 'responsavel', 'prioridade',
-    'subcategoria', 'status', 'tipo_documento'
+    'subcategoria', 'status', 'tipo_documento', 'filtro8', 'filtro9', 'filtro10'
   ];
   
   useEffect(() => {

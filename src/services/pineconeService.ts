@@ -14,6 +14,9 @@ interface Metadado {
   status?: string;
   tipo_documento?: string;
   data_processamento?: string;
+  filtro8?: string;
+  filtro9?: string;
+  filtro10?: string;
   [key: string]: any;
 }
 
@@ -25,7 +28,7 @@ export const pineconeService = {
       // Obter a chave da API e o nome do índice
       const apiKeys = configService.getApiKeys();
       const pineconeApiKey = apiKeys.PINECONE_API_KEY;
-      const indexName = configService.getIndexName();
+      const indexName = INDEX_NAME;
       
       if (!pineconeApiKey) {
         toast({
@@ -115,7 +118,7 @@ export const pineconeService = {
       // Obter a chave da API e o nome do índice
       const apiKeys = configService.getApiKeys();
       const pineconeApiKey = apiKeys.PINECONE_API_KEY;
-      const indexName = configService.getIndexName();
+      const indexName = INDEX_NAME;
       
       if (!pineconeApiKey) {
         toast({
