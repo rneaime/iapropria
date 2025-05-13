@@ -10,14 +10,14 @@ import {
   HelpCircle
 } from 'lucide-react';
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem
-} from "@/components/ui/sidebar";
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+  navigationMenuTriggerStyle
+} from "@/components/ui/navigation-menu";
 
 interface AppSidebarProps {
   activeTab: string;
@@ -69,26 +69,20 @@ export function AppSidebar({ activeTab, setActiveTab }: AppSidebarProps) {
   ];
 
   return (
-    <Sidebar className="border-r border-burgundy-light">
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.value}>
-                  <SidebarMenuButton 
-                    isActive={activeTab === item.value}
-                    onClick={() => setActiveTab(item.value)}
-                  >
-                    <item.icon className="h-4 w-4 mr-2" />
-                    <span>{item.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
-    </Sidebar>
+    <NavigationMenu className="w-full justify-start px-4 py-2 bg-burgundy-light">
+      <NavigationMenuList>
+        {menuItems.map((item) => (
+          <NavigationMenuItem key={item.value}>
+            <NavigationMenuLink 
+              className={navigationMenuTriggerStyle() + (activeTab === item.value ? " bg-burgundy text-white" : "")}
+              onClick={() => setActiveTab(item.value)}
+            >
+              <item.icon className="h-4 w-4 mr-2" />
+              <span>{item.title}</span>
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+        ))}
+      </NavigationMenuList>
+    </NavigationMenu>
   );
 }

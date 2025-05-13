@@ -3,7 +3,6 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { User, LogOut } from 'lucide-react';
 import { aiService } from '@/services/aiService';
-import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from '@/components/layout/AppSidebar';
 
 interface AppLayoutProps {
@@ -35,7 +34,6 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
       <header className="bg-burgundy-light text-white shadow-md z-10">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center space-x-2">
-            <SidebarTrigger className="text-white" />
             <div className="font-bold text-xl">IAprópria</div>
           </div>
           
@@ -55,21 +53,16 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
         </div>
       </header>
       
-      <div className="flex-1 flex">
-        <SidebarProvider defaultOpen={true}>
-          <div className="flex w-full">
-            <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-            <SidebarInset className="flex flex-col flex-1">
-              <main className="flex-1 p-6">{children}</main>
-              <footer className="bg-burgundy text-white py-4">
-                <div className="container mx-auto px-4 text-center text-sm">
-                  &copy; {new Date().getFullYear()} IAprópria. Todos os direitos reservados.
-                </div>
-              </footer>
-            </SidebarInset>
-          </div>
-        </SidebarProvider>
-      </div>
+      {/* Navigation */}
+      <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      
+      <main className="flex-1 p-6">{children}</main>
+      
+      <footer className="bg-burgundy text-white py-4">
+        <div className="container mx-auto px-4 text-center text-sm">
+          &copy; {new Date().getFullYear()} IAprópria. Todos os direitos reservados.
+        </div>
+      </footer>
     </div>
   );
 }
