@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { User, LogOut } from 'lucide-react';
 import { aiService } from '@/services/aiService';
 import { AppSidebar } from '@/components/layout/AppSidebar';
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -15,6 +16,7 @@ interface AppLayoutProps {
 
 export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }: AppLayoutProps) {
   const [modelName, setModelName] = React.useState<string>("");
+  const isMobile = useIsMobile();
   
   React.useEffect(() => {
     if (user?.id) {
@@ -40,9 +42,11 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
             </div>
             
             <div className="flex items-center space-x-4">
-              <div className="text-sm text-white/90 hidden md:block">
-                Modelo: <span className="font-medium">{modelName?.split('/').pop() || "Não selecionado"}</span>
-              </div>
+              {!isMobile && (
+                <div className="text-sm text-white/90 hidden md:block">
+                  Modelo: <span className="font-medium">{modelName?.split('/').pop() || "Não selecionado"}</span>
+                </div>
+              )}
               <div className="flex items-center space-x-2">
                 <User className="h-4 w-4 text-white/90" />
                 <span className="font-medium">{user?.nome || "Usuário"}</span>
@@ -56,9 +60,7 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
         </header>
         
         {/* Navigation - mantendo a mesma largura do header */}
-        <div className="container mx-auto">
-          <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-        </div>
+        <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       </div>
       
       {/* Conteúdo principal com margem superior para não ficar abaixo do header fixo */}
