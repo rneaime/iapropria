@@ -1,4 +1,3 @@
-
 import { INDEX_NAME } from '../config/env';
 import { configService } from './configService';
 import { toast } from '@/hooks/use-toast';
@@ -20,6 +19,55 @@ interface Metadado {
   [key: string]: any;
 }
 
+// Mock data for development and fallback purposes
+const mockDocumentos: Metadado[] = [
+  {
+    id: "doc1",
+    nome_arquivo: "relatorio_financeiro.pdf",
+    categoria: "Financeiro",
+    departamento: "Contabilidade",
+    responsavel: "Ana Silva",
+    prioridade: "Alta",
+    subcategoria: "Relatórios",
+    status: "Aprovado",
+    tipo_documento: "PDF",
+    data_processamento: "2025-05-10",
+    filtro8: "Mensal",
+    filtro9: "2025",
+    filtro10: "Interno"
+  },
+  {
+    id: "doc2",
+    nome_arquivo: "contrato_fornecedor.docx",
+    categoria: "Jurídico",
+    departamento: "Legal",
+    responsavel: "Carlos Mendes",
+    prioridade: "Média",
+    subcategoria: "Contratos",
+    status: "Em análise",
+    tipo_documento: "DOCX",
+    data_processamento: "2025-05-08",
+    filtro8: "Anual",
+    filtro9: "2025",
+    filtro10: "Externo"
+  },
+  {
+    id: "doc3",
+    nome_arquivo: "proposta_marketing.pptx",
+    categoria: "Marketing",
+    departamento: "Marketing",
+    responsavel: "Paula Costa",
+    prioridade: "Baixa",
+    subcategoria: "Propostas",
+    status: "Pendente",
+    tipo_documento: "PPTX",
+    data_processamento: "2025-05-12",
+    filtro8: "Trimestral",
+    filtro9: "2025",
+    filtro10: "Interno"
+  }
+];
+
 export const pineconeService = {
   buscarDocumentos: async (userId: string, topK: number = 100): Promise<Metadado[]> => {
     try {
@@ -39,75 +87,76 @@ export const pineconeService = {
         throw new Error("Chave da API Pinecone não encontrada. Configure em Parâmetros > API.");
       }
       
-      // Obter detalhes e informações do Pinecone sobre o índice
-      const indexDetailsResponse = await fetch(`https://controller.${indexName}.pinecone.io/databases`, {
-        method: 'GET',
-        headers: {
-          'Api-Key': pineconeApiKey
+      try {
+        // Obter detalhes e informações do Pinecone sobre o índice
+        const indexDetailsResponse = await fetch(`https://controller.${indexName}.pinecone.io/databases`, {
+          method: 'GET',
+          headers: {
+            'Api-Key': pineconeApiKey
+          },
+          signal: AbortSignal.timeout(5000) // Timeout de 5 segundos
+        });
+        
+        if (!indexDetailsResponse.ok) {
+          const errorText = await indexDetailsResponse.text();
+          console.error("Erro na resposta do Pinecone:", errorText);
+          throw new Error(`Erro ao acessar o Pinecone: ${indexDetailsResponse.statusText}`);
         }
-      });
-      
-      if (!indexDetailsResponse.ok) {
-        const errorText = await indexDetailsResponse.text();
-        console.error("Erro na resposta do Pinecone:", errorText);
-        toast({
-          title: "Erro ao acessar o Pinecone",
-          description: `Status: ${indexDetailsResponse.status} - ${indexDetailsResponse.statusText}`,
-          variant: "destructive"
+        
+        const indexDetails = await indexDetailsResponse.json();
+        console.log("Detalhes do índice Pinecone:", indexDetails);
+        
+        // Obter o host para o índice específico
+        const host = `https://${indexName}-${indexDetails.host}`;
+        
+        // Consultar os documentos
+        const queryResponse = await fetch(`${host}/query`, {
+          method: 'POST',
+          headers: {
+            'Api-Key': pineconeApiKey,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            namespace: userId,
+            topK: topK,
+            includeMetadata: true,
+            vector: Array(1536).fill(0) // Vetor de zeros para consulta aberta
+          }),
+          signal: AbortSignal.timeout(8000) // Timeout de 8 segundos
         });
-        throw new Error(`Erro ao acessar o Pinecone: ${indexDetailsResponse.statusText}`);
-      }
-      
-      const indexDetails = await indexDetailsResponse.json();
-      console.log("Detalhes do índice Pinecone:", indexDetails);
-      
-      // Obter o host para o índice específico
-      const host = `https://${indexName}-${indexDetails.host}`;
-      
-      // Consultar os documentos
-      const queryResponse = await fetch(`${host}/query`, {
-        method: 'POST',
-        headers: {
-          'Api-Key': pineconeApiKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          namespace: userId,
-          topK: topK,
-          includeMetadata: true,
-          vector: Array(1536).fill(0) // Vetor de zeros para consulta aberta
-        })
-      });
-      
-      if (!queryResponse.ok) {
-        const errorText = await queryResponse.text();
-        console.error("Erro na consulta ao Pinecone:", errorText);
+        
+        if (!queryResponse.ok) {
+          const errorText = await queryResponse.text();
+          console.error("Erro na consulta ao Pinecone:", errorText);
+          throw new Error(`Erro na consulta ao Pinecone: ${queryResponse.statusText}`);
+        }
+        
+        const queryResult = await queryResponse.json();
+        console.log("Resultado da consulta Pinecone:", queryResult);
+        
+        // Transformar os resultados do Pinecone para o formato esperado
+        const documentos: Metadado[] = queryResult.matches.map((match: any) => ({
+          id: match.id,
+          ...match.metadata
+        }));
+        
+        return documentos.length > 0 ? documentos : mockDocumentos;
+      } catch (error) {
+        console.warn("Falha ao conectar com Pinecone, usando dados de exemplo:", error);
         toast({
-          title: "Erro na consulta ao Pinecone",
-          description: `Status: ${queryResponse.status} - ${queryResponse.statusText}`,
-          variant: "destructive"
+          title: "Usando dados de exemplo",
+          description: "Não foi possível conectar ao Pinecone. Exibindo dados de exemplo para demonstração.",
         });
-        throw new Error(`Erro na consulta ao Pinecone: ${queryResponse.statusText}`);
+        return mockDocumentos;
       }
-      
-      const queryResult = await queryResponse.json();
-      console.log("Resultado da consulta Pinecone:", queryResult);
-      
-      // Transformar os resultados do Pinecone para o formato esperado
-      const documentos: Metadado[] = queryResult.matches.map((match: any) => ({
-        id: match.id,
-        ...match.metadata
-      }));
-      
-      return documentos;
     } catch (error) {
       console.error("Erro ao buscar documentos:", error);
       toast({
         title: "Erro ao buscar documentos",
-        description: error instanceof Error ? error.message : "Erro desconhecido ao buscar documentos",
+        description: "Usando dados de exemplo para demonstração",
         variant: "destructive"
       });
-      return [];
+      return mockDocumentos;
     }
   },
 
