@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { ChatInterface } from "@/components/chat/ChatInterface";
@@ -86,7 +87,7 @@ export function HelpChat() {
         onSendMessage={handleSendMessage}
         isLoading={isLoading}
         placeholder="Digite sua pergunta..."
-        enableSearch={true}
+        enableSearch={false} // Disable search feature
       />
     </div>
   );

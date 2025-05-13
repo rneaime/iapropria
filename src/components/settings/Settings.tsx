@@ -76,13 +76,43 @@ export function Settings() {
       <h2 className="text-2xl font-bold">Configurações</h2>
       
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-6 w-full">
-          <TabsTrigger value="geral">Geral</TabsTrigger>
-          <TabsTrigger value="perfil">Perfil</TabsTrigger>
-          <TabsTrigger value="api">API</TabsTrigger>
-          <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
-          <TabsTrigger value="personalizacao">Personalização</TabsTrigger>
-          <TabsTrigger value="marca">Marca</TabsTrigger>
+        <TabsList className="grid grid-cols-6 w-full bg-burgundy-light text-white">
+          <TabsTrigger 
+            value="geral" 
+            className="text-white data-[state=active]:bg-burgundy data-[state=active]:text-white data-[state=active]:shadow-sm hover:bg-burgundy-dark"
+          >
+            Geral
+          </TabsTrigger>
+          <TabsTrigger 
+            value="perfil" 
+            className="text-white data-[state=active]:bg-burgundy data-[state=active]:text-white data-[state=active]:shadow-sm hover:bg-burgundy-dark"
+          >
+            Perfil
+          </TabsTrigger>
+          <TabsTrigger 
+            value="api" 
+            className="text-white data-[state=active]:bg-burgundy data-[state=active]:text-white data-[state=active]:shadow-sm hover:bg-burgundy-dark"
+          >
+            API
+          </TabsTrigger>
+          <TabsTrigger 
+            value="whatsapp" 
+            className="text-white data-[state=active]:bg-burgundy data-[state=active]:text-white data-[state=active]:shadow-sm hover:bg-burgundy-dark"
+          >
+            WhatsApp
+          </TabsTrigger>
+          <TabsTrigger 
+            value="personalizacao" 
+            className="text-white data-[state=active]:bg-burgundy data-[state=active]:text-white data-[state=active]:shadow-sm hover:bg-burgundy-dark"
+          >
+            Personalização
+          </TabsTrigger>
+          <TabsTrigger 
+            value="marca" 
+            className="text-white data-[state=active]:bg-burgundy data-[state=active]:text-white data-[state=active]:shadow-sm hover:bg-burgundy-dark"
+          >
+            Marca
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="geral" className="space-y-6 pt-4">

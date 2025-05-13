@@ -2,7 +2,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Search } from 'lucide-react';
 import { CodeBlock } from "@/components/ui/code-block";
 import { ChatInput } from "@/components/chat/ChatInput";
 
@@ -25,7 +24,7 @@ export function ChatInterface({
   onSendMessage, 
   isLoading = false,
   placeholder = "Digite sua pergunta...",
-  enableSearch = true
+  enableSearch = false // Default to false now
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -181,19 +180,7 @@ export function ChatInterface({
             disabled={isLoading}
             placeholder={placeholder}
           />
-          {enableSearch && (
-            <div className="mt-2 text-xs text-right">
-              <Button 
-                variant="link" 
-                size="sm" 
-                className="p-0 h-auto" 
-                onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(messages[messages.length - 1]?.content || '')}`, '_blank')}
-              >
-                <Search className="h-3 w-3 mr-1" />
-                Pesquisar na web
-              </Button>
-            </div>
-          )}
+          {/* Search web button removed */}
         </div>
       </CardContent>
     </Card>
