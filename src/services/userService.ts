@@ -1,18 +1,23 @@
-import { DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, DB_NAME } from "../config/env";
+import { DB_CONFIG } from "../config/env";
+import database from "../lib/database";
 
-// Simulação do serviço de usuário para frontend
-// Em um ambiente real, isso seria conectado ao banco de dados PostgreSQL
-
-interface User {
+// Interface para o usuário
+export interface User {
   id: number;
   nome: string;
   email: string;
-  senha: string;
-  criado_em: Date;
-  ultimo_acesso: Date;
-  status: "ativo" | "inativo" | "pendente";
-  tipo: "admin" | "usuario" | "cliente";
+  senha?: string;
+  criado_em?: Date;
+  ultimo_acesso?: Date;
+  status?: "ativo" | "inativo" | "pendente";
+  tipo?: "admin" | "usuario" | "cliente";
   avatar?: string;
+  telefone?: string;
+  nome_empresa?: string;
+  cidade?: string;
+  estado?: string;
+  pais?: string;
+  logado?: boolean;
 }
 
 // Usuários simulados para o frontend
@@ -26,7 +31,13 @@ const usuariosSimulados: User[] = [
     ultimo_acesso: new Date(),
     status: "ativo",
     tipo: "admin",
-    avatar: "https://randomuser.me/api/portraits/men/1.jpg"
+    avatar: "https://randomuser.me/api/portraits/men/1.jpg",
+    telefone: "(11) 99999-9999",
+    nome_empresa: "IA Própria",
+    cidade: "São Paulo",
+    estado: "SP",
+    pais: "Brasil",
+    logado: true
   },
   {
     id: 2,
@@ -36,19 +47,48 @@ const usuariosSimulados: User[] = [
     criado_em: new Date("2023-02-15"),
     ultimo_acesso: new Date(),
     status: "ativo",
-    tipo: "usuario"
+    tipo: "usuario",
+    telefone: "(11) 88888-8888",
+    nome_empresa: "Empresa Exemplo",
+    cidade: "Rio de Janeiro",
+    estado: "RJ",
+    pais: "Brasil",
+    logado: false
   }
 ];
 
 export const userService = {
   // Obter lista de usuários
   getUsuarios: async (): Promise<User[]> => {
-    // Em um ambiente real, isso seria uma chamada de API ou consulta ao banco
+    try {
+      // Tentar buscar do banco de dados
+      const result = await database.query('SELECT * FROM usuarios');
+      
+      // Se a consulta retornou dados, usá-los
+      if (result.rows.length > 0) {
+        return result.rows;
+      }
+    } catch (error) {
+      console.error("Erro ao buscar usuários do banco:", error);
+    }
+    
+    // Fallback para dados simulados
     return Promise.resolve(usuariosSimulados);
   },
   
   // Obter usuário por ID
   getUsuarioPorId: async (id: number): Promise<User | null> => {
+    try {
+      const result = await database.query('SELECT * FROM usuarios WHERE id = $1', [id]);
+      
+      if (result.rows.length > 0) {
+        return result.rows[0];
+      }
+    } catch (error) {
+      console.error(`Erro ao buscar usuário ID ${id}:`, error);
+    }
+    
+    // Fallback para dados simulados
     const usuario = usuariosSimulados.find(u => u.id === id);
     return Promise.resolve(usuario || null);
   },
@@ -105,30 +145,7 @@ export const userService = {
   }
 };
 
-export const getUsers = async () => {
-  // Placeholder implementation until proper backend is connected
-  return [
-    {
-      id: 1,
-      nome: "John Doe",
-      email: "john@example.com",
-      telefone: "(11) 99999-9999",
-      nome_empresa: "Tech Company",
-      cidade: "São Paulo",
-      estado: "SP",
-      pais: "Brasil",
-      logado: true
-    },
-    {
-      id: 2,
-      nome: "Jane Smith",
-      email: "jane@example.com",
-      telefone: "(11) 88888-8888",
-      nome_empresa: "Design Studio",
-      cidade: "Rio de Janeiro",
-      estado: "RJ",
-      pais: "Brasil",
-      logado: false
-    }
-  ];
+// Função exportada para compatibilidade com código existente
+export const getUsers = async (): Promise<User[]> => {
+  return userService.getUsuarios();
 };

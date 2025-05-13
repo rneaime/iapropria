@@ -1,13 +1,45 @@
 
 /// <reference types="vite/client" />
 
-// Declaração para simular o módulo pg quando necessário
+// Declaração para suporte ao módulo pg
 declare module 'pg' {
   export class Pool {
-    constructor(options: any);
-    query: (text: string, params?: any[]) => Promise<{
+    constructor(options: {
+      host: string;
+      port: number;
+      user: string;
+      password: string;
+      database: string;
+      ssl?: boolean | {
+        rejectUnauthorized: boolean;
+      };
+    });
+    
+    query(text: string, params?: any[]): Promise<{
       rows: any[];
       rowCount: number;
     }>;
+    
+    end(): Promise<void>;
+  }
+  
+  export class Client {
+    constructor(options: {
+      host: string;
+      port: number;
+      user: string;
+      password: string;
+      database: string;
+      ssl?: boolean | {
+        rejectUnauthorized: boolean;
+      };
+    });
+    
+    connect(): Promise<void>;
+    query(text: string, params?: any[]): Promise<{
+      rows: any[];
+      rowCount: number;
+    }>;
+    end(): Promise<void>;
   }
 }
