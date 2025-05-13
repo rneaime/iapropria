@@ -1,3 +1,4 @@
+
 import { INDEX_NAME } from '../config/env';
 import { configService } from './configService';
 import { toast } from '@/hooks/use-toast';
@@ -84,42 +85,13 @@ export const pineconeService = {
         throw new Error("Chave da API Pinecone não configurada");
       }
       
-      // Método 1: Aproximação direta similar ao Python
-      const baseUrl = `https://controller.${indexName}.pinecone.io`;
+      // Simplificando a abordagem: usar uma URL direta como na versão Python
+      // A URL precisará ser construída corretamente para contornar problemas de CORS
       
-      // 1. Primeiro, obtenha informações do índice para descobrir o host correto
-      console.log("Obtendo informações do índice Pinecone:", indexName);
-      const indexInfoResponse = await fetch(`${baseUrl}/databases/${indexName}`, {
-        method: 'GET',
-        headers: {
-          'Api-Key': pineconeApiKey
-        },
-        signal: AbortSignal.timeout(10000)
-      });
+      const baseUrl = `https://${indexName}-default.svc.${indexName}.pinecone.io`;
+      console.log("Tentando conexão com a URL:", baseUrl);
       
-      if (!indexInfoResponse.ok) {
-        console.error(`Falha ao obter informações do índice: ${indexInfoResponse.status} ${indexInfoResponse.statusText}`);
-        throw new Error(`Não foi possível obter informações do índice: ${indexInfoResponse.statusText}`);
-      }
-      
-      const indexInfo = await indexInfoResponse.json();
-      console.log("Informações do índice obtidas:", indexInfo);
-      
-      // 2. Use as informações para construir o host de consulta correto
-      let host;
-      if (indexInfo.status && indexInfo.status.host) {
-        host = indexInfo.status.host;
-      } else if (indexInfo.host) {
-        host = indexInfo.host;
-      } else {
-        throw new Error("Host do índice não encontrado na resposta");
-      }
-      
-      const queryUrl = `https://${indexName}-${host}/vectors/query`;
-      console.log("URL final de consulta:", queryUrl);
-      
-      // 3. Agora faça a consulta real com o vetor zero (como no Python)
-      const queryResponse = await fetch(queryUrl, {
+      const queryResponse = await fetch(`${baseUrl}/vectors/query`, {
         method: 'POST',
         headers: {
           'Api-Key': pineconeApiKey,
@@ -171,17 +143,16 @@ export const pineconeService = {
     } catch (error) {
       console.error("Erro ao buscar documentos do Pinecone:", error);
       
-      // Método alternativo: Tentar abordagem direta similar aos endpoints anteriores
+      // Método alternativo: Tentar outros endpoints conhecidos
       try {
-        console.log("Tentando método alternativo de conexão...");
+        console.log("Tentando endpoints alternativos...");
         const indexName = configService.getIndexName();
         const apiKeys = configService.getApiKeys();
         const pineconeApiKey = apiKeys.PINECONE_API_KEY;
         const namespace = "1";
         
-        // Usar um dos endpoints diretos que funcionaram antes
+        // Lista de possíveis endpoints a tentar
         const endpointsToTry = [
-          `https://${indexName}-default.svc.${indexName}.pinecone.io/vectors/query`,
           `https://${indexName}-yjxbz01.svc.gcp-starter.pinecone.io/vectors/query`,
           `https://${indexName}-c6ervab.svc.us-east-1-aws.pinecone.io/vectors/query`
         ];
@@ -264,28 +235,11 @@ export const pineconeService = {
         throw new Error("Chave da API Pinecone não encontrada.");
       }
       
-      // Obter detalhes e informações do Pinecone sobre o índice
-      const indexDetailsResponse = await fetch(`https://controller.${indexName}.pinecone.io/databases`, {
-        method: 'GET',
-        headers: {
-          'Api-Key': pineconeApiKey
-        }
-      });
-      
-      if (!indexDetailsResponse.ok) {
-        toast({
-          title: "Erro ao acessar o Pinecone",
-          description: indexDetailsResponse.statusText,
-          variant: "destructive"
-        });
-        throw new Error(`Erro ao acessar o Pinecone: ${indexDetailsResponse.statusText}`);
-      }
-      
-      const indexDetails = await indexDetailsResponse.json();
-      const host = `https://${indexName}-${indexDetails.host}`;
+      // URL direta para deleção
+      const deleteUrl = `https://${indexName}-default.svc.${indexName}.pinecone.io/vectors/delete`;
       
       // Deletar o documento
-      const deleteResponse = await fetch(`${host}/vectors/delete`, {
+      const deleteResponse = await fetch(deleteUrl, {
         method: 'POST',
         headers: {
           'Api-Key': pineconeApiKey,
