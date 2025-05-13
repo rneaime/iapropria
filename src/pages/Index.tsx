@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -165,7 +166,7 @@ const Index = () => {
     >
       <div className="container p-4">
         {activeTab === "atendimento" && (
-          <div className="space-y-4 flex flex-col h-[calc(100vh-16rem)]">
+          <div className="space-y-4">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Atendimento IA</h2>
               <div className="flex space-x-2">
@@ -178,7 +179,7 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="flex-1">
+            <div className="h-[calc(100vh-250px)]">
               <ChatInterface
                 title="Assistente de Atendimento IAprópria"
                 initialMessages={initialMessages}
@@ -191,10 +192,10 @@ const Index = () => {
         )}
         
         {activeTab === "conversa" && (
-          <div className="space-y-4 flex flex-col h-[calc(100vh-16rem)]">
+          <div className="space-y-4">
             <h2 className="text-2xl font-bold">Conversa IA</h2>
             
-            <div className="flex-1">
+            <div className="h-[calc(100vh-250px)]">
               <ChatInterface
                 title="Assistente de Conversa IAprópria"
                 initialMessages={initialMessages}

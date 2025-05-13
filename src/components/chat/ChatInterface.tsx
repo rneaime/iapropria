@@ -68,7 +68,7 @@ export function ChatInterface({
         <CardTitle>{title}</CardTitle>
       </CardHeader>
       <CardContent className="p-0 flex flex-col h-[calc(100%-76px)]">
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto max-h-[calc(100vh-250px)]">
           <div className="p-4">
             {messages.map((message, index) => (
               <div 
@@ -104,7 +104,7 @@ export function ChatInterface({
           </div>
         </div>
         
-        <div className="p-4 border-t border-gray-200 mt-auto">
+        <div className="p-4 border-t border-gray-200 bg-white">
           <div className="flex space-x-2">
             <Input
               value={inputMessage}
