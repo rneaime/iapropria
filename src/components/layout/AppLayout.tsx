@@ -19,8 +19,13 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
   
   React.useEffect(() => {
     if (user?.id) {
-      const preferredModel = aiService.getModeloPreferido(user.id.toString());
-      setModelName(preferredModel);
+      try {
+        const preferredModel = aiService.getModeloPreferido(user.id.toString());
+        setModelName(preferredModel || "");
+      } catch (error) {
+        console.error("Error getting preferred model:", error);
+        setModelName("");
+      }
     }
   }, [user]);
   
@@ -36,7 +41,7 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
           
           <div className="flex items-center space-x-4">
             <div className="text-sm text-white/90 hidden md:block">
-              Modelo: <span className="font-medium">{modelName.split('/').pop() || "Não selecionado"}</span>
+              Modelo: <span className="font-medium">{modelName?.split('/').pop() || "Não selecionado"}</span>
             </div>
             <div className="flex items-center space-x-2">
               <User className="h-4 w-4 text-white/90" />

@@ -72,7 +72,7 @@ export function ChatInput({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyPress}
-          className="flex-1 min-h-[80px] max-h-[200px] resize-y"
+          className="flex-1 min-h-[60px] max-h-[150px] resize-y"
           disabled={disabled}
         />
         <Button 
