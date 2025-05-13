@@ -26,30 +26,17 @@ export const DB_PASSWORD = DB_CONFIG.PASSWORD;
 export const DB_NAME = DB_CONFIG.NAME;
 
 export const AI_MODELS = [
-  "meta-llama/llama-4-scout-17b-16e-instruct",
-  "llama-3.3-70b-versatile",
-  "llama-3.3-70b-specdec",
-  "llama-3.2-11b-vision-preview",
-  "llama-3.2-1b-preview",
-  "llama-3.2-3b-preview",
-  "llama-3.2-90b-vision-preview",
   "llama-3.1-8b-instant",
-  "llama-guard-3-8b",
-  "llama3-70b-8192",
-  "llama3-8b-8192",
-  "deepseek-r1-distill-llama-70b",
-  "deepseek-r1-distill-qwen-32b",
-  "distil-whisper-large-v3-en",
-  "gemma2-9b-it",
-  "allam-2-7b",
-  "mistral-saba-24b",
-  "playai-tts",
-  "playai-tts-arabic",
-  "qwen-2.5-32b",
-  "qwen-2.5-coder-32b",
-  "qwen-qwq-32b",
-  "whisper-large-v3",
-  "whisper-large-v3-turbo"
+  "llama-2-70b-chat",
+  "llama-3.1-70b-versatile",
+  "mixtral-8x7b-32768",
+  "gemma-7b-it",
+  "claude-3-haiku-20240307",
+  "claude-3-sonnet-20240229",
+  "claude-3-opus-20240229",
+  "gemini-1.0-pro",
+  "command-r",
+  "command-r-plus"
 ];
 
 export const INDEX_NAME = "iapropria2";

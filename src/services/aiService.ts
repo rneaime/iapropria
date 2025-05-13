@@ -1,3 +1,4 @@
+
 import { AI_MODELS } from '../config/env';
 import { toast } from '../hooks/use-toast';
 import { configService } from './configService';
@@ -29,7 +30,7 @@ export const aiService = {
 
       // Criar o corpo da requisição
       const requestBody = {
-        model: "llama-3.1-70b-instant", // ou outro modelo disponível no Groq
+        model: "llama-3.1-8b-instant", // Modelo atualizado que existe no Groq
         messages: [
           ...formattedHistory,
           { role: 'user', content: message }
@@ -58,6 +59,8 @@ export const aiService = {
           throw new Error(`Erro na API do Groq: Chave de API inválida. Por favor, verifique sua chave em Parâmetros > API.`);
         } else if (errorData.error?.type === 'authentication_error') {
           throw new Error(`Erro de autenticação na API do Groq. Por favor, verifique sua chave em Parâmetros > API.`);
+        } else if (errorData.error?.message?.includes('does not exist')) {
+          throw new Error(`Modelo não encontrado. Tente outro modelo em Parâmetros > Geral.`);
         } else {
           throw new Error(`Erro na API do Groq: ${errorData.error?.message || response.statusText}`);
         }
