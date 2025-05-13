@@ -124,7 +124,6 @@ export const pineconeService = {
         vector: zeroVector,
         topK: topK,
         includeMetadata: true,
-        // namespace é uma propriedade interna do objeto de retorno, não um parâmetro da query
         filter: { namespace: ns }
       });
       
@@ -205,8 +204,8 @@ export const pineconeService = {
           // @ts-ignore - A função será disponibilizada pelo script
           if (typeof window.connectToPinecone === 'function') {
             // @ts-ignore
-            window.connectToPinecone(
-              (apiKey) => {
+            window.connectToPinecone({
+              onSuccess: (apiKey: string) => {
                 // Callback quando conseguir a chave
                 console.log("API key obtida com sucesso via Connect API");
                 
@@ -229,11 +228,9 @@ export const pineconeService = {
                     }
                   });
               },
-              {
-                integrationId: 'iapropria-app',
-                container: container
-              }
-            );
+              integrationId: 'iapropria-app',
+              container: container
+            });
           } else {
             console.error("Connect API não disponível");
             reject(new Error("Connect API não disponível"));
