@@ -64,13 +64,13 @@ export function ChatInterface({
   };
   
   return (
-    <Card className="w-full flex flex-col h-full">
+    <Card className="w-full h-full flex flex-col">
       <CardHeader className="bg-burgundy text-white rounded-t-md p-4">
         <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent className="p-0 flex-1 flex flex-col h-full">
-        <div className="flex-1 overflow-hidden">
-          <ScrollArea className="h-full p-4">
+      <CardContent className="p-0 flex flex-col h-[calc(100%-76px)]">
+        <ScrollArea className="flex-1 h-full">
+          <div className="p-4">
             {messages.map((message, index) => (
               <div 
                 key={index} 
@@ -102,8 +102,8 @@ export function ChatInterface({
               </div>
             )}
             <div ref={messagesEndRef} />
-          </ScrollArea>
-        </div>
+          </div>
+        </ScrollArea>
         
         <div className="p-4 border-t border-gray-200 mt-auto">
           <div className="flex space-x-2">
