@@ -35,6 +35,9 @@ export function AppSidebar({
 }: AppSidebarProps) {
   const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const isMobile = useIsMobile();
+  
+  // Use a default logo image
+  const logoImage = "/placeholder.svg";
 
   const menuItems = [
     {
@@ -98,9 +101,15 @@ export function AppSidebar({
           </Button>
         </SheetTrigger>
         <SheetContent side="left" className="bg-burgundy-light text-white p-0 w-52 z-50">
-          {/* Logo space */}
+          {/* Logo space with image instead of text */}
           <div className="h-16 flex items-center justify-center border-b border-burgundy-dark mb-2">
-            <span className="font-bold text-xl">IAprópria</span>
+            <div className="h-10 w-10">
+              <img 
+                src={logoImage} 
+                alt="Logo" 
+                className="h-full w-full object-contain"
+              />
+            </div>
           </div>
           
           <nav className="flex flex-col">
@@ -126,9 +135,15 @@ export function AppSidebar({
   // Versão desktop - menu vertical à esquerda
   return (
     <div className="flex flex-col bg-burgundy-light text-white relative h-full">
-      {/* Logo space */}
+      {/* Logo space with image instead of text */}
       <div className="h-16 flex items-center justify-center border-b border-burgundy-dark mb-2">
-        <span className="font-bold text-xl">IAprópria</span>
+        <div className="h-10 w-10">
+          <img 
+            src={logoImage} 
+            alt="Logo" 
+            className="h-full w-full object-contain"
+          />
+        </div>
       </div>
       
       {/* Close button */}
