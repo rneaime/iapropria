@@ -36,8 +36,12 @@ export const upsertService = {
   uploadFile: async (file: File, folderPath: string): Promise<string> => {
     try {
       // Em um aplicativo real, enviaríamos o arquivo para um endpoint do servidor
-      // Simulando o upload bem-sucedido
-      console.log(`Simulando upload do arquivo ${file.name} para ${folderPath}`);
+      console.log(`Iniciando upload do arquivo ${file.name} para ${folderPath}`);
+      
+      // Simular um atraso para o upload
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      console.log(`Upload do arquivo ${file.name} concluído com sucesso`);
       
       // Retorna o caminho onde o arquivo foi salvo
       return `${folderPath}/${file.name}`;
@@ -57,19 +61,17 @@ export const upsertService = {
       console.log(`Namespace: ${namespace}`);
       console.log(`Metadados completos:`, metadata);
       
-      // Em um aplicativo real, faríamos uma chamada à API que processa o arquivo
-      // e envia para o Pinecone com os metadados fornecidos
-      
       // Obter a chave da API Pinecone
       const apiKeys = configService.getApiKeys();
       const pineconeApiKey = apiKeys.PINECONE_API_KEY;
       
       if (!pineconeApiKey) {
+        console.error("Chave da API Pinecone não encontrada");
         throw new Error("Chave da API Pinecone não encontrada. Configure em Parâmetros > API.");
       }
       
-      // Simulando processamento
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Simular processamento com um atraso
+      await new Promise(resolve => setTimeout(resolve, 2500));
       
       const fileName = filePath.split('/').pop() || '';
       const extension = fileName.split('.').pop()?.toLowerCase();
@@ -90,6 +92,8 @@ export const upsertService = {
       if (extension === 'pdf' || extension === 'docx') {
         response.detalhes!.paginas_processadas = Math.floor(Math.random() * 10) + 1;
       }
+      
+      console.log("Processamento concluído com sucesso:", response);
       
       return response;
     } catch (error) {

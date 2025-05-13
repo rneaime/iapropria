@@ -21,6 +21,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { authService } from '@/services/authService';
+import { Loader2 } from "lucide-react";
 
 interface UploadFormProps {
   userId?: string;
@@ -29,9 +30,21 @@ interface UploadFormProps {
 export function UploadForm({ userId = "1" }: UploadFormProps) {
   const [folderPath, setFolderPath] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState<boolean>(false);
   
   const handleFolderSave = () => {
-    // In a real app, this would call an API to save the folder path
+    if (!folderPath.trim()) {
+      toast({
+        title: "Caminho vazio",
+        description: "Por favor, informe um caminho de pasta válido",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    // Em um aplicativo real, isso chamaria uma API
+    console.log("Salvando caminho da pasta:", folderPath);
+    
     toast({
       title: "Pasta configurada",
       description: `Caminho da pasta salvo: ${folderPath}`,
@@ -48,13 +61,34 @@ export function UploadForm({ userId = "1" }: UploadFormProps) {
       return;
     }
     
-    // In a real app, this would call an API to upload the file
-    toast({
-      title: "Arquivo enviado",
-      description: `${selectedFile.name} foi enviado com sucesso!`,
-    });
+    if (!folderPath) {
+      toast({
+        title: "Caminho não definido",
+        description: "Configure o caminho da pasta primeiro",
+        variant: "destructive"
+      });
+      return;
+    }
     
-    setSelectedFile(null);
+    // Simulação de upload
+    setIsUploading(true);
+    
+    // Em um aplicativo real, isso seria uma chamada à API para upload
+    setTimeout(() => {
+      console.log(`Arquivo ${selectedFile.name} enviado para ${folderPath}`);
+      
+      toast({
+        title: "Arquivo enviado",
+        description: `${selectedFile.name} foi enviado com sucesso!`,
+      });
+      
+      setSelectedFile(null);
+      setIsUploading(false);
+      
+      // Limpar input de arquivo
+      const fileInput = document.getElementById('file-input') as HTMLInputElement;
+      if (fileInput) fileInput.value = '';
+    }, 1500);
   };
   
   const isValidFileType = (file: File) => {
@@ -72,6 +106,7 @@ export function UploadForm({ userId = "1" }: UploadFormProps) {
       "text/x-python"
     ];
     
+    console.log("Verificando tipo de arquivo:", file.type);
     return allowedTypes.includes(file.type);
   };
   
@@ -79,19 +114,22 @@ export function UploadForm({ userId = "1" }: UploadFormProps) {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Gerenciamento de Arquivos</h2>
       
-      <Accordion type="single" collapsible className="w-full">
-        <AccordionItem value="arquivos-salvos">
-          <AccordionTrigger>Arquivos Salvos Temporário</AccordionTrigger>
+      <Accordion type="single" collapsible className="w-full" defaultValue="folder-config">
+        <AccordionItem value="folder-config">
+          <AccordionTrigger>Configuração da Pasta</AccordionTrigger>
           <AccordionContent>
             <Card>
               <CardHeader>
                 <CardTitle>Configuração da Pasta</CardTitle>
+                <CardDescription>
+                  Defina o caminho da pasta antes de fazer upload de arquivos
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-end space-x-2">
                   <div className="flex-1">
                     <Input
-                      placeholder="Caminho da pasta"
+                      placeholder="Caminho da pasta (ex: /dados/arquivos)"
                       value={folderPath}
                       onChange={(e) => setFolderPath(e.target.value)}
                     />
@@ -122,13 +160,16 @@ export function UploadForm({ userId = "1" }: UploadFormProps) {
               </CardHeader>
               <CardContent>
                 <Input
+                  id="file-input"
                   type="file"
                   onChange={(e) => {
                     const file = e.target.files?.[0];
                     if (file) {
                       if (isValidFileType(file)) {
+                        console.log("Arquivo válido selecionado:", file.name);
                         setSelectedFile(file);
                       } else {
+                        console.error("Formato de arquivo inválido:", file.type);
                         toast({
                           title: "Formato de arquivo inválido",
                           description: "O formato do arquivo selecionado não é suportado.",
@@ -143,9 +184,10 @@ export function UploadForm({ userId = "1" }: UploadFormProps) {
               <CardFooter>
                 <Button 
                   onClick={handleFileUpload} 
-                  disabled={!selectedFile || !folderPath}
+                  disabled={!selectedFile || !folderPath || isUploading}
                 >
-                  Enviar Arquivo
+                  {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isUploading ? "Enviando..." : "Enviar Arquivo"}
                 </Button>
               </CardFooter>
             </Card>

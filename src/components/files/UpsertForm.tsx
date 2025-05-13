@@ -45,6 +45,7 @@ export function UpsertForm({ userId, folderPath }: UpsertFormProps) {
   // Carregar arquivos salvos quando o componente montar ou o folderPath mudar
   useEffect(() => {
     if (folderPath) {
+      console.log("Carregando arquivos salvos do caminho:", folderPath);
       // Em um aplicativo real, isso seria uma chamada à API para listar os arquivos
       const mockFiles = [
         { id: '1', name: 'documento.pdf', path: `${folderPath}/documento.pdf` },
@@ -85,8 +86,11 @@ export function UpsertForm({ userId, folderPath }: UpsertFormProps) {
     setUploading(true);
     
     try {
+      console.log(`Iniciando upload do arquivo ${selectedFile.name} para ${folderPath}`);
+      
       // Upload do arquivo
-      await upsertService.uploadFile(selectedFile, folderPath);
+      const filePath = await upsertService.uploadFile(selectedFile, folderPath);
+      console.log("Upload concluído. Caminho do arquivo:", filePath);
       
       toast({
         title: "Arquivo enviado",
@@ -97,7 +101,7 @@ export function UpsertForm({ userId, folderPath }: UpsertFormProps) {
       const newFile = {
         id: String(Date.now()),
         name: selectedFile.name,
-        path: `${folderPath}/${selectedFile.name}`
+        path: filePath
       };
       
       setSavedFiles(prev => [...prev, newFile]);
@@ -109,6 +113,7 @@ export function UpsertForm({ userId, folderPath }: UpsertFormProps) {
       if (fileInput) fileInput.value = '';
       
     } catch (error) {
+      console.error("Erro no upload:", error);
       toast({
         title: "Erro no upload",
         description: `Falha ao enviar o arquivo: ${error instanceof Error ? error.message : String(error)}`,
@@ -141,7 +146,7 @@ export function UpsertForm({ userId, folderPath }: UpsertFormProps) {
     setProcessing(true);
     
     try {
-      // Adicionar nome do arquivo aos metadados
+      // Adicionar nome do arquivo e data aos metadados
       const filePath = savedFiles.find(f => f.name === selectedSavedFile)?.path || '';
       const fileName = selectedSavedFile;
       const updatedMetadata = {
@@ -153,6 +158,7 @@ export function UpsertForm({ userId, folderPath }: UpsertFormProps) {
       console.log(`Processando arquivo ${filePath} com namespace ${userId} e metadados:`, updatedMetadata);
       
       const result = await upsertService.processFile(filePath, userId, updatedMetadata);
+      console.log("Resultado do processamento:", result);
       
       if (result.status === "success") {
         toast({
@@ -167,6 +173,7 @@ export function UpsertForm({ userId, folderPath }: UpsertFormProps) {
         });
       }
     } catch (error) {
+      console.error("Erro no processamento:", error);
       toast({
         title: "Erro no processamento",
         description: `Falha ao processar o arquivo: ${error instanceof Error ? error.message : String(error)}`,
@@ -178,7 +185,10 @@ export function UpsertForm({ userId, folderPath }: UpsertFormProps) {
   };
   
   const isValidFileType = (file: File) => {
-    return upsertService.getSupportedFormats().includes(file.type);
+    const supportedFormats = upsertService.getSupportedFormats();
+    console.log("Verificando formato do arquivo:", file.type);
+    console.log("Formatos suportados:", supportedFormats);
+    return supportedFormats.includes(file.type);
   };
   
   return (
@@ -202,7 +212,9 @@ export function UpsertForm({ userId, folderPath }: UpsertFormProps) {
               if (file) {
                 if (isValidFileType(file)) {
                   setSelectedFile(file);
+                  console.log("Arquivo selecionado:", file.name);
                 } else {
+                  console.error("Formato inválido:", file.type);
                   toast({
                     title: "Formato de arquivo inválido",
                     description: "O formato do arquivo selecionado não é suportado.",
