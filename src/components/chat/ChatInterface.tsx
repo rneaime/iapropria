@@ -30,6 +30,11 @@ export function ChatInterface({
   const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
+  // Update component messages when initialMessages change
+  useEffect(() => {
+    setMessages(initialMessages);
+  }, [initialMessages]);
+  
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -63,40 +68,42 @@ export function ChatInterface({
       <CardHeader className="bg-burgundy text-white rounded-t-md p-4">
         <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent className="p-0 flex-1 flex flex-col">
-        <ScrollArea className="flex-1 p-4">
-          {messages.map((message, index) => (
-            <div 
-              key={index} 
-              className={`mb-4 ${
-                message.sender === 'user' ? 'ml-auto text-right' : ''
-              }`}
-            >
+      <CardContent className="p-0 flex-1 flex flex-col h-full">
+        <div className="flex-1 overflow-hidden">
+          <ScrollArea className="h-full p-4">
+            {messages.map((message, index) => (
               <div 
-                className={`inline-block p-3 rounded-lg max-w-[80%] ${
-                  message.sender === 'user' 
-                    ? 'bg-burgundy text-white rounded-br-none' 
-                    : 'bg-gray-100 text-gray-800 rounded-bl-none'
+                key={index} 
+                className={`mb-4 ${
+                  message.sender === 'user' ? 'ml-auto text-right' : ''
                 }`}
               >
-                {message.content}
+                <div 
+                  className={`inline-block p-3 rounded-lg max-w-[80%] ${
+                    message.sender === 'user' 
+                      ? 'bg-burgundy text-white rounded-br-none' 
+                      : 'bg-gray-100 text-gray-800 rounded-bl-none'
+                  }`}
+                >
+                  {message.content}
+                </div>
+                <div className="text-xs text-gray-500 mt-1">
+                  {message.sender === 'user' ? 'Você' : 'Assistente'}
+                </div>
               </div>
-              <div className="text-xs text-gray-500 mt-1">
-                {message.sender === 'user' ? 'Você' : 'Assistente'}
+            ))}
+            {isLoading && (
+              <div className="flex items-center mb-4">
+                <div className="animate-pulse flex space-x-1">
+                  <div className="h-2 w-2 bg-burgundy rounded-full"></div>
+                  <div className="h-2 w-2 bg-burgundy rounded-full"></div>
+                  <div className="h-2 w-2 bg-burgundy rounded-full"></div>
+                </div>
               </div>
-            </div>
-          ))}
-          {isLoading && (
-            <div className="flex items-center mb-4">
-              <div className="animate-pulse flex space-x-1">
-                <div className="h-2 w-2 bg-burgundy rounded-full"></div>
-                <div className="h-2 w-2 bg-burgundy rounded-full"></div>
-                <div className="h-2 w-2 bg-burgundy rounded-full"></div>
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </ScrollArea>
+            )}
+            <div ref={messagesEndRef} />
+          </ScrollArea>
+        </div>
         
         <div className="p-4 border-t border-gray-200 mt-auto">
           <div className="flex space-x-2">

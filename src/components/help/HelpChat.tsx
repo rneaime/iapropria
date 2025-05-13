@@ -14,6 +14,13 @@ export function HelpChat() {
   const { toast } = useToast();
   
   const handleSendMessage = async (message: string) => {
+    // Add user message to the list
+    const userMessage = {
+      content: message,
+      sender: 'user' as const
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
     setIsLoading(true);
     
     try {
