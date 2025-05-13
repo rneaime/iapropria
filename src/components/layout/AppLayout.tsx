@@ -30,7 +30,7 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
   
   return (
     <div className="min-h-screen bg-burgundy-subtle flex flex-col">
-      {/* Header e Menu fixos */}
+      {/* Header e Menu fixos com largura igual */}
       <div className="fixed top-0 left-0 right-0 z-50">
         {/* Header */}
         <header className="bg-burgundy-light text-white shadow-md">
@@ -55,12 +55,14 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
           </div>
         </header>
         
-        {/* Navigation */}
-        <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        {/* Navigation - mantendo a mesma largura do header */}
+        <div className="container mx-auto">
+          <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+        </div>
       </div>
       
       {/* Conteúdo principal com margem superior para não ficar abaixo do header fixo */}
-      <main className="flex-1 p-6 mt-32">{children}</main>
+      <main className="flex-1 p-6 mt-32 container mx-auto">{children}</main>
       
       <footer className="bg-burgundy text-white py-4">
         <div className="container mx-auto px-4 text-center text-sm">

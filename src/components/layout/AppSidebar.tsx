@@ -8,7 +8,8 @@ import {
   Upload,
   Settings,
   HelpCircle,
-  Menu
+  Menu,
+  X
 } from 'lucide-react';
 import {
   NavigationMenu,
@@ -34,34 +35,9 @@ export function AppSidebar({ activeTab, setActiveTab }: AppSidebarProps) {
 
   const menuItems = [
     {
-      title: "Atendimento IA",
-      value: "atendimento",
-      icon: MessageSquare
-    },
-    {
-      title: "Conversa IA",
-      value: "conversa",
-      icon: MessageSquare
-    },
-    {
-      title: "Histórico",
-      value: "historico",
-      icon: History
-    },
-    {
-      title: "Filtros",
-      value: "filtros",
-      icon: Filter
-    },
-    {
-      title: "Gerar Imagem",
-      value: "gerar-imagem",
-      icon: Image
-    },
-    {
-      title: "Upload",
-      value: "enviar-arquivo",
-      icon: Upload
+      title: "Ajuda",
+      value: "ajuda",
+      icon: HelpCircle
     },
     {
       title: "Configurações",
@@ -69,9 +45,34 @@ export function AppSidebar({ activeTab, setActiveTab }: AppSidebarProps) {
       icon: Settings
     },
     {
-      title: "Ajuda",
-      value: "ajuda",
-      icon: HelpCircle
+      title: "Upload",
+      value: "enviar-arquivo",
+      icon: Upload
+    },
+    {
+      title: "Gerar Imagem",
+      value: "gerar-imagem",
+      icon: Image
+    },
+    {
+      title: "Filtros",
+      value: "filtros",
+      icon: Filter
+    },
+    {
+      title: "Histórico",
+      value: "historico",
+      icon: History
+    },
+    {
+      title: "Conversa IA",
+      value: "conversa",
+      icon: MessageSquare
+    },
+    {
+      title: "Atendimento IA",
+      value: "atendimento",
+      icon: MessageSquare
     }
   ];
 
@@ -93,9 +94,14 @@ export function AppSidebar({ activeTab, setActiveTab }: AppSidebarProps) {
               <span className="sr-only">Menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="right" className="bg-burgundy-light text-white p-0 w-64">
+          <SheetContent side="right" className="bg-burgundy-light text-white p-0 w-64 z-50">
+            <div className="flex justify-end p-4">
+              <Button variant="ghost" size="icon" className="text-white" onClick={() => setIsMenuOpen(false)}>
+                <X className="h-6 w-6" />
+              </Button>
+            </div>
             <nav className="flex flex-col">
-              {menuItems.map((item) => (
+              {[...menuItems].reverse().map((item) => (
                 <Button
                   key={item.value}
                   variant="ghost"
@@ -115,10 +121,10 @@ export function AppSidebar({ activeTab, setActiveTab }: AppSidebarProps) {
     );
   }
 
-  // Versão desktop com menu horizontal
+  // Versão desktop com menu horizontal da direita para esquerda
   return (
     <NavigationMenu className="w-full justify-end px-4 py-2 bg-burgundy-light">
-      <NavigationMenuList>
+      <NavigationMenuList className="flex-row-reverse">
         {menuItems.map((item) => (
           <NavigationMenuItem key={item.value}>
             <NavigationMenuLink 
