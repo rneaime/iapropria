@@ -1,4 +1,5 @@
 
+import { Pinecone } from '@pinecone-database/pinecone';
 import { INDEX_NAME } from '../config/env';
 import { configService } from './configService';
 import { toast } from '@/hooks/use-toast';
@@ -69,12 +70,115 @@ const mockDocumentos: Metadado[] = [
   }
 ];
 
+// Cliente Pinecone inicializado com lazy loading
+let pineconeClient: Pinecone | null = null;
+
+const initPineconeClient = (): Pinecone | null => {
+  try {
+    const apiKeys = configService.getApiKeys();
+    const pineconeApiKey = apiKeys.PINECONE_API_KEY;
+    
+    if (!pineconeApiKey) {
+      console.error("Chave da API Pinecone não configurada");
+      return null;
+    }
+    
+    console.log("Inicializando cliente Pinecone com a biblioteca oficial");
+    return new Pinecone({ apiKey: pineconeApiKey });
+  } catch (error) {
+    console.error("Erro ao inicializar cliente Pinecone:", error);
+    return null;
+  }
+};
+
 export const pineconeService = {
   buscarDocumentos: async (userId: string, topK: number = 1000): Promise<Metadado[]> => {
     try {
+      console.log(`Buscando documentos do Pinecone com namespace: ${userId}`);
+      
+      // Utilizando o novo cliente Pinecone se não estiver inicializado
+      if (!pineconeClient) {
+        pineconeClient = initPineconeClient();
+        if (!pineconeClient) {
+          throw new Error("Não foi possível inicializar o cliente Pinecone");
+        }
+      }
+      
+      // Obtendo o nome do índice configurado
+      const indexName = configService.getIndexName() || INDEX_NAME;
+      console.log(`Usando índice: ${indexName}`);
+      
+      // Utilizando a nova API do Pinecone
+      const index = pineconeClient.index(indexName);
+      
+      // Namespace fixado como "1" conforme solicitado
+      const namespace = "1";
+      
+      // Criando vetor de zeros com 384 dimensões
+      const zeroVector = new Array(384).fill(0);
+      
+      // Executando a consulta
+      const queryResponse = await index.query({
+        vector: zeroVector,
+        topK: topK,
+        includeMetadata: true,
+        namespace: namespace,
+      });
+      
+      console.log("Resposta da consulta Pinecone:", queryResponse);
+      
+      if (!queryResponse.matches || queryResponse.matches.length === 0) {
+        console.warn("Nenhum documento encontrado no Pinecone para este namespace");
+        toast({
+          title: "Sem documentos",
+          description: "Nenhum documento encontrado no namespace indicado"
+        });
+        return [];
+      }
+      
+      // Extrair metadados dos resultados
+      const documentos = queryResponse.matches.map((match: any) => ({
+        id: match.id,
+        ...match.metadata
+      }));
+      
+      console.log(`✅ Encontrados ${documentos.length} documentos reais no Pinecone.`);
+      
+      toast({
+        title: "Conectado ao Pinecone",
+        description: `${documentos.length} documentos reais carregados com sucesso.`
+      });
+      
+      return documentos;
+      
+    } catch (error) {
+      console.error("Erro ao buscar documentos do Pinecone com biblioteca oficial:", error);
+      
+      // Método alternativo: Tentar via REST API direta
+      try {
+        console.log("Tentando método alternativo via REST API...");
+        return await pineconeService.buscarDocumentosRestApi(userId, topK);
+      } catch (restError) {
+        console.error("Método REST API também falhou:", restError);
+        
+        toast({
+          title: "Erro na conexão com Pinecone",
+          description: "Usando dados de demonstração temporários. Erro: " + (error instanceof Error ? error.message : String(error)),
+          variant: "destructive"
+        });
+        
+        // Como último recurso, use dados de demonstração
+        return mockDocumentos;
+      }
+    }
+  },
+  
+  // Método alternativo que usa REST API diretamente
+  buscarDocumentosRestApi: async (userId: string, topK: number = 1000): Promise<Metadado[]> => {
+    try {
       // No código Python, o namespace é definido como o ID do usuário
       const namespace = "1";  // Fixado para namespace 1 conforme solicitado
-      console.log(`Buscando documentos do Pinecone com namespace: ${namespace}`);
+      console.log(`Buscando documentos do Pinecone via REST com namespace: ${namespace}`);
       
       // Obter a chave da API do configService
       const apiKeys = configService.getApiKeys();
@@ -89,7 +193,7 @@ export const pineconeService = {
       // A URL precisará ser construída corretamente para contornar problemas de CORS
       
       const baseUrl = `https://${indexName}-default.svc.${indexName}.pinecone.io`;
-      console.log("Tentando conexão com a URL:", baseUrl);
+      console.log("Tentando conexão REST com a URL:", baseUrl);
       
       const queryResponse = await fetch(`${baseUrl}/vectors/query`, {
         method: 'POST',
@@ -114,7 +218,7 @@ export const pineconeService = {
       }
       
       const queryResult = await queryResponse.json();
-      console.log("Resposta da consulta Pinecone:", queryResult);
+      console.log("Resposta da consulta Pinecone REST:", queryResult);
       
       if (!queryResult.matches || queryResult.matches.length === 0) {
         console.warn("Nenhum documento encontrado no Pinecone para este namespace");
@@ -131,7 +235,7 @@ export const pineconeService = {
         ...match.metadata
       }));
       
-      console.log(`✅ Encontrados ${documentos.length} documentos reais no Pinecone.`);
+      console.log(`✅ Encontrados ${documentos.length} documentos reais no Pinecone via REST.`);
       
       toast({
         title: "Conectado ao Pinecone",
@@ -139,9 +243,8 @@ export const pineconeService = {
       });
       
       return documentos;
-      
     } catch (error) {
-      console.error("Erro ao buscar documentos do Pinecone:", error);
+      console.error("Erro REST API:", error);
       
       // Método alternativo: Tentar outros endpoints conhecidos
       try {
@@ -203,16 +306,7 @@ export const pineconeService = {
         
         throw new Error("Todos os métodos de conexão falharam");
       } catch (altError) {
-        console.error("Método alternativo também falhou:", altError);
-        
-        toast({
-          title: "Erro na conexão com Pinecone",
-          description: "Usando dados de demonstração temporários. Erro: " + (error instanceof Error ? error.message : String(error)),
-          variant: "destructive"
-        });
-        
-        // Como último recurso, use dados de demonstração
-        return mockDocumentos;
+        throw altError;
       }
     }
   },
@@ -221,44 +315,19 @@ export const pineconeService = {
     try {
       console.log(`Deletando documento ${documentId} do usuário ${userId}`);
       
-      // Obter a chave da API e o nome do índice
-      const apiKeys = configService.getApiKeys();
-      const pineconeApiKey = apiKeys.PINECONE_API_KEY;
-      const indexName = INDEX_NAME;
-      
-      if (!pineconeApiKey) {
-        toast({
-          title: "Erro",
-          description: "Chave da API Pinecone não encontrada.",
-          variant: "destructive"
-        });
-        throw new Error("Chave da API Pinecone não encontrada.");
+      // Inicializa o cliente se necessário
+      if (!pineconeClient) {
+        pineconeClient = initPineconeClient();
+        if (!pineconeClient) {
+          throw new Error("Não foi possível inicializar o cliente Pinecone");
+        }
       }
       
-      // URL direta para deleção
-      const deleteUrl = `https://${indexName}-default.svc.${indexName}.pinecone.io/vectors/delete`;
+      const indexName = configService.getIndexName() || INDEX_NAME;
+      const index = pineconeClient.index(indexName);
       
-      // Deletar o documento
-      const deleteResponse = await fetch(deleteUrl, {
-        method: 'POST',
-        headers: {
-          'Api-Key': pineconeApiKey,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ids: [documentId],
-          namespace: userId
-        })
-      });
-      
-      if (!deleteResponse.ok) {
-        toast({
-          title: "Erro ao deletar do Pinecone",
-          description: deleteResponse.statusText,
-          variant: "destructive"
-        });
-        throw new Error(`Erro ao deletar do Pinecone: ${deleteResponse.statusText}`);
-      }
+      // Deletar com o SDK oficial
+      await index.deleteOne(documentId, { namespace: userId });
       
       toast({
         title: "Documento deletado",
@@ -267,8 +336,58 @@ export const pineconeService = {
       
       return true;
     } catch (error) {
-      console.error("Erro ao deletar documento:", error);
-      return false;
+      console.error("Erro ao deletar documento com SDK:", error);
+      
+      // Tentativa alternativa com REST API
+      try {
+        const apiKeys = configService.getApiKeys();
+        const pineconeApiKey = apiKeys.PINECONE_API_KEY;
+        const indexName = INDEX_NAME;
+        
+        if (!pineconeApiKey) {
+          toast({
+            title: "Erro",
+            description: "Chave da API Pinecone não encontrada.",
+            variant: "destructive"
+          });
+          throw new Error("Chave da API Pinecone não encontrada.");
+        }
+        
+        // URL direta para deleção
+        const deleteUrl = `https://${indexName}-default.svc.${indexName}.pinecone.io/vectors/delete`;
+        
+        // Deletar o documento
+        const deleteResponse = await fetch(deleteUrl, {
+          method: 'POST',
+          headers: {
+            'Api-Key': pineconeApiKey,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            ids: [documentId],
+            namespace: userId
+          })
+        });
+        
+        if (!deleteResponse.ok) {
+          throw new Error(`Erro ao deletar do Pinecone: ${deleteResponse.statusText}`);
+        }
+        
+        toast({
+          title: "Documento deletado",
+          description: "O documento foi removido com sucesso."
+        });
+        
+        return true;
+      } catch (restError) {
+        console.error("Erro ao deletar com REST API:", restError);
+        toast({
+          title: "Erro ao deletar do Pinecone",
+          description: restError instanceof Error ? restError.message : "Erro desconhecido",
+          variant: "destructive"
+        });
+        return false;
+      }
     }
   },
 
@@ -295,6 +414,70 @@ export const pineconeService = {
     } catch (error) {
       console.error("Erro ao obter filtros:", error);
       return {};
+    }
+  },
+  
+  // Método para verificar a conexão com Pinecone
+  testConnection: async (): Promise<boolean> => {
+    try {
+      // Tenta inicializar o cliente se ainda não existir
+      if (!pineconeClient) {
+        pineconeClient = initPineconeClient();
+        if (!pineconeClient) {
+          throw new Error("Não foi possível inicializar o cliente Pinecone");
+        }
+      }
+      
+      // Lista os índices para verificar se a conexão está funcionando
+      const indexes = await pineconeClient.listIndexes();
+      console.log("Índices disponíveis:", indexes);
+      
+      toast({
+        title: "Conexão com Pinecone estabelecida",
+        description: `Conectado com sucesso. Índices disponíveis: ${indexes.indexes?.length || 0}`
+      });
+      
+      return true;
+    } catch (error) {
+      console.error("Erro ao testar conexão com Pinecone:", error);
+      
+      // Tenta método REST alternativo
+      try {
+        const apiKeys = configService.getApiKeys();
+        const pineconeApiKey = apiKeys.PINECONE_API_KEY;
+        
+        if (!pineconeApiKey) {
+          throw new Error("Chave da API Pinecone não configurada");
+        }
+        
+        // Consulta a API descritiva do Pinecone
+        const response = await fetch("https://controller.pinecone.io/describe", {
+          method: 'GET',
+          headers: {
+            'Api-Key': pineconeApiKey
+          }
+        });
+        
+        if (response.ok) {
+          toast({
+            title: "Conexão REST com Pinecone estabelecida",
+            description: "Conectado com sucesso via REST API"
+          });
+          return true;
+        } else {
+          throw new Error(`Falha na conexão REST: ${response.statusText}`);
+        }
+      } catch (restError) {
+        console.error("Erro no teste de conexão REST:", restError);
+        
+        toast({
+          variant: "destructive",
+          title: "Erro na conexão com Pinecone",
+          description: error instanceof Error ? error.message : "Erro desconhecido"
+        });
+        
+        return false;
+      }
     }
   }
 };

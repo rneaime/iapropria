@@ -7,9 +7,12 @@ import { Button } from "@/components/ui/button";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { AlertCircle, CheckCircle, ExternalLink, HelpCircle, Info } from "lucide-react";
 import { configService } from "@/services/configService";
+import { PineconeConnector } from './PineconeConnector';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 export function ApiConnector() {
   const [showHelp, setShowHelp] = useState(false);
+  const [activeTab, setActiveTab] = useState("gerenciador");
   
   const apiKeys = configService.getApiKeys();
   const groqApiConfigured = !!apiKeys.GROQ_API_KEY;
@@ -46,7 +49,7 @@ export function ApiConnector() {
             <AlertTitle>Como configurar as APIs</AlertTitle>
             <AlertDescription className="text-sm">
               Para usar a funcionalidade de chat, é necessário configurar uma chave de API válida para o Groq. 
-              Você também pode configurar outras APIs para funcionalidades adicionais.
+              Para usar o Pinecone, configure sua API key e o nome do índice.
             </AlertDescription>
           </Alert>
           
@@ -75,6 +78,30 @@ export function ApiConnector() {
               </AccordionContent>
             </AccordionItem>
             
+            <AccordionItem value="pinecone">
+              <AccordionTrigger className="text-sm font-medium">
+                Como configurar o Pinecone?
+              </AccordionTrigger>
+              <AccordionContent>
+                <ol className="text-sm space-y-2 list-decimal pl-5">
+                  <li>Acesse o console do Pinecone em <a href="https://app.pinecone.io" target="_blank" className="text-blue-600 hover:underline">app.pinecone.io</a></li>
+                  <li>Faça login ou crie uma conta</li>
+                  <li>No painel, encontre sua API key na seção "API Keys"</li>
+                  <li>Copie a chave e configure-a como "Pinecone" no gerenciador de APIs</li>
+                  <li>No campo "URL/Host", coloque o nome do seu índice (ex: "iapropria2")</li>
+                </ol>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="mt-3 text-xs" 
+                  onClick={() => window.open('https://app.pinecone.io', '_blank')}
+                >
+                  <ExternalLink className="h-3 w-3 mr-1" />
+                  Ir para o console do Pinecone
+                </Button>
+              </AccordionContent>
+            </AccordionItem>
+            
             <AccordionItem value="troubleshooting">
               <AccordionTrigger className="text-sm font-medium">
                 Solucionando problemas com a API
@@ -83,8 +110,8 @@ export function ApiConnector() {
                 <p><strong>Problema:</strong> Mensagem de erro "API key is invalid"</p>
                 <p><strong>Solução:</strong> Certifique-se de que copiou a chave corretamente, sem espaços extras.</p>
                 
-                <p><strong>Problema:</strong> Mensagem de erro "API rate limit exceeded"</p>
-                <p><strong>Solução:</strong> Espere alguns minutos e tente novamente. O plano gratuito do Groq tem limites de uso.</p>
+                <p><strong>Problema:</strong> Erros CORS ao conectar ao Pinecone</p>
+                <p><strong>Solução:</strong> Verifique se o índice foi configurado corretamente e se sua API key tem permissões.</p>
                 
                 <p><strong>Problema:</strong> Outros erros de conexão</p>
                 <p><strong>Solução:</strong> Utilize o botão "Testar conexão" para verificar se sua chave está funcionando corretamente.</p>
@@ -95,7 +122,20 @@ export function ApiConnector() {
       )}
       
       <CardContent className="pt-6">
-        <ApiKeyManager />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="w-full mb-4">
+            <TabsTrigger value="gerenciador" className="flex-1">Gerenciador de APIs</TabsTrigger>
+            <TabsTrigger value="pinecone" className="flex-1">Pinecone</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="gerenciador">
+            <ApiKeyManager />
+          </TabsContent>
+          
+          <TabsContent value="pinecone">
+            <PineconeConnector />
+          </TabsContent>
+        </Tabs>
       </CardContent>
       
       <CardFooter className="bg-gray-50 border-t p-4 text-sm text-gray-600">
