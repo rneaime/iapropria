@@ -84,7 +84,7 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
   
   useEffect(() => {
     fetchData();
-  }, [userId, onFilterChange]);
+  }, [userId]);
   
   // Extrair valores únicos para cada coluna
   const getUniqueValues = (column: string) => {

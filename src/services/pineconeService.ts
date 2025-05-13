@@ -74,6 +74,10 @@ export const pineconeService = {
     try {
       console.log(`Buscando documentos para usuário ${userId} usando Pinecone`);
       
+      // Forçar o namespace para "1" conforme solicitado
+      const forceNamespace = "1";
+      const namespaceToUse = forceNamespace || userId;
+      
       // Obter a chave da API e o nome do índice
       const apiKeys = configService.getApiKeys();
       const pineconeApiKey = apiKeys.PINECONE_API_KEY;
@@ -123,6 +127,7 @@ export const pineconeService = {
       }
       
       console.log("Host URL para consulta:", hostUrl);
+      console.log("Usando namespace:", namespaceToUse);
       
       // Consultar os documentos usando namespace do usuário
       // Use um vetor zero para obter todos os documentos sem considerar similaridade
@@ -135,7 +140,7 @@ export const pineconeService = {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          namespace: userId,
+          namespace: namespaceToUse,
           topK: topK,
           includeMetadata: true,
           vector: zeroVector
@@ -156,10 +161,10 @@ export const pineconeService = {
           ...match.metadata
         }));
         
-        console.log(`Encontrados ${documentos.length} documentos no Pinecone para o usuário ${userId}`);
+        console.log(`Encontrados ${documentos.length} documentos reais no Pinecone para o namespace ${namespaceToUse}`);
         return documentos;
       } else {
-        console.log(`Nenhum documento encontrado no Pinecone para o usuário ${userId}. Usando dados de exemplo.`);
+        console.log(`Nenhum documento encontrado no Pinecone para o namespace ${namespaceToUse}. Usando dados de exemplo.`);
         return mockDocumentos;
       }
     } catch (error) {
@@ -174,9 +179,13 @@ export const pineconeService = {
       try {
         const apiKeys = configService.getApiKeys();
         const pineconeApiKey = apiKeys.PINECONE_API_KEY;
+        const forceNamespace = "1";
         
         // URL direta para o índice específico
         const directUrl = `https://${INDEX_NAME}-default.svc.${INDEX_NAME}.pinecone.io/query`;
+        
+        console.log("Tentando URL direta:", directUrl);
+        console.log("Usando namespace forçado:", forceNamespace);
         
         const response = await fetch(directUrl, {
           method: 'POST',
@@ -185,7 +194,7 @@ export const pineconeService = {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            namespace: userId,
+            namespace: forceNamespace,
             topK: topK,
             includeMetadata: true,
             vector: Array(1536).fill(0)
@@ -198,18 +207,22 @@ export const pineconeService = {
         }
         
         const result = await response.json();
+        console.log("Resultado da segunda tentativa:", result);
         
         if (result.matches && result.matches.length > 0) {
-          return result.matches.map((match: any) => ({
+          const documentos = result.matches.map((match: any) => ({
             id: match.id,
             ...match.metadata
           }));
+          console.log(`Recuperados ${documentos.length} documentos na segunda tentativa`);
+          return documentos;
         }
       } catch (secondError) {
         console.error("Segunda tentativa falhou:", secondError);
       }
       
       // Se todas as tentativas falharem, usar dados de exemplo
+      console.log("Todas as tentativas falharam. Usando dados de exemplo para demonstração.");
       toast({
         title: "Usando dados de exemplo",
         description: "Não foi possível conectar ao Pinecone. Exibindo dados de exemplo para demonstração.",
