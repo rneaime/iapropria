@@ -1,5 +1,6 @@
 
-import { API_KEYS, INDEX_NAME } from '../config/env';
+import { INDEX_NAME } from '../config/env';
+import { configService } from './configService';
 
 interface Metadado {
   id?: string;
@@ -15,14 +16,21 @@ interface Metadado {
   [key: string]: any;
 }
 
-// Este serviço é uma simulação - na prática, você não deve expor chaves da API no frontend
-// Em uma aplicação real, estas chamadas seriam feitas através de um backend seguro
-
 export const pineconeService = {
   buscarDocumentos: async (userId: string, topK: number = 100): Promise<Metadado[]> => {
     try {
       console.log(`Buscando documentos para usuário ${userId} usando Pinecone`);
       
+      // Obter a chave da API e o nome do índice
+      const apiKeys = configService.getApiKeys();
+      const pineconeApiKey = apiKeys.PINECONE_API_KEY;
+      const indexName = configService.getIndexName();
+      
+      if (!pineconeApiKey) {
+        throw new Error("Chave da API Pinecone não encontrada. Configure em Parâmetros > API.");
+      }
+      
+      // Em uma implementação real, esta seria uma chamada à API Pinecone
       // Simulando dados retornados do Pinecone
       const documentos: Metadado[] = [];
       

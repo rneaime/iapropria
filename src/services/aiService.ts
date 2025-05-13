@@ -1,6 +1,7 @@
 
-import { API_KEYS, AI_MODELS } from '../config/env';
+import { AI_MODELS } from '../config/env';
 import { toast } from '../components/ui/use-toast';
+import { configService } from './configService';
 
 interface Message {
   pergunta: string;
@@ -13,11 +14,19 @@ export const aiService = {
       console.log("Enviando mensagem para o modelo de IA:", message);
       console.log("Histórico:", history);
       
-      // Em uma aplicação real, esta seria uma chamada a uma API como GROQ ou OpenAI
-      // Simulando uma resposta após um pequeno delay
+      // Obter a chave da API
+      const apiKeys = configService.getApiKeys();
+      const groqApiKey = apiKeys.GROQ_API_KEY;
+      
+      if (!groqApiKey) {
+        throw new Error("Chave da API GROQ não encontrada. Configure em Parâmetros > API.");
+      }
+      
+      // Em uma implementação real, você faria uma chamada para a API Groq aqui
+      // Por enquanto, estamos simulando a resposta
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      return `Esta é uma resposta simulada para: "${message}". Em uma aplicação real, esta resposta viria de um modelo de IA como ${AI_MODELS[0]}.`;
+      return `Esta é uma resposta simulada para: "${message}". Em uma aplicação real, esta resposta viria do modelo de IA usando a chave da API Groq.`;
     } catch (error) {
       console.error("Erro ao enviar mensagem para IA:", error);
       toast({
@@ -33,8 +42,15 @@ export const aiService = {
     try {
       console.log("Gerando imagem com prompt:", prompt);
       
-      // Em uma aplicação real, esta seria uma chamada a uma API como Stable Diffusion
-      // Simulando uma resposta após um pequeno delay
+      // Obter a chave da API
+      const apiKeys = configService.getApiKeys();
+      const stableApiKey = apiKeys.STABLE_DIFFUSION_API_KEY;
+      
+      if (!stableApiKey) {
+        throw new Error("Chave da API Stable Diffusion não encontrada. Configure em Parâmetros > API.");
+      }
+      
+      // Em uma implementação real, essa seria uma chamada à API Stable Diffusion
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Simulando uma imagem de retorno (URL de placeholder)
