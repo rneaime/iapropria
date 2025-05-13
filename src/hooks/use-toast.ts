@@ -1,7 +1,7 @@
 
-// This file re-exports from the UI component for compatibility
-import { useToast as useToastUI } from "@/components/ui/use-toast";
-import { toast as toastUI } from "@/components/ui/use-toast";
+// Redirecionamento para o componente UI
+import { toast as toastUI, useToast as useToastUI, type ToastProps } from "@/components/ui/use-toast";
 
+export type { ToastProps };
 export const useToast = useToastUI;
 export const toast = toastUI;

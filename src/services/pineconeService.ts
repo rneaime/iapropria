@@ -19,7 +19,7 @@ interface Metadado {
   [key: string]: any;
 }
 
-// Mock data apenas para fallback caso a conexão real falhe
+// Usaremos apenas para fallback se necessário
 const mockDocumentos: Metadado[] = [
   {
     id: "doc1",
@@ -71,121 +71,178 @@ const mockDocumentos: Metadado[] = [
 export const pineconeService = {
   buscarDocumentos: async (userId: string, topK: number = 1000): Promise<Metadado[]> => {
     try {
-      // Forçar o namespace para "1" independentemente do userId recebido
-      const namespace = "1";
-      console.log(`Buscando documentos reais do Pinecone para namespace: ${namespace}`);
+      // No código Python, o namespace é definido como o ID do usuário
+      const namespace = "1";  // Fixado para namespace 1 conforme solicitado
+      console.log(`Buscando documentos do Pinecone com namespace: ${namespace}`);
       
       // Obter a chave da API do configService
       const apiKeys = configService.getApiKeys();
       const pineconeApiKey = apiKeys.PINECONE_API_KEY;
-      const indexName = INDEX_NAME; // "iapropria2"
+      const indexName = configService.getIndexName();
       
       if (!pineconeApiKey) {
-        throw new Error("Chave da API Pinecone não encontrada. Configure em Parâmetros > API.");
+        throw new Error("Chave da API Pinecone não configurada");
       }
       
-      // Tentar múltiplos endpoits para garantir a conexão
-      const endpointsToTry = [
-        // Endpoint padrão do Pinecone - gRPC
-        {
-          url: `https://${indexName}-default.svc.${indexName}.pinecone.io/vectors/query`,
-          description: "Endpoint padrão"
+      // Método 1: Aproximação direta similar ao Python
+      const baseUrl = `https://controller.${indexName}.pinecone.io`;
+      
+      // 1. Primeiro, obtenha informações do índice para descobrir o host correto
+      console.log("Obtendo informações do índice Pinecone:", indexName);
+      const indexInfoResponse = await fetch(`${baseUrl}/databases/${indexName}`, {
+        method: 'GET',
+        headers: {
+          'Api-Key': pineconeApiKey
         },
-        // Endpoint alternativo para GCP starter
-        {
-          url: `https://${indexName}-yjxbz01.svc.gcp-starter.pinecone.io/vectors/query`,
-          description: "Endpoint GCP"
-        },
-        // Endpoint alternativo para AWS
-        {
-          url: `https://${indexName}-c6ervab.svc.us-east-1-aws.pinecone.io/vectors/query`,
-          description: "Endpoint AWS"
-        }
-      ];
-      
-      // Função para criar um vetor zero para consulta
-      // Usamos 384 dimensões como no código Python de referência 
-      const createZeroVector = (dim: number = 384) => Array(dim).fill(0);
-      
-      let documentos: Metadado[] = [];
-      let connected = false;
-      
-      // Tentar cada endpoint até conseguir
-      for (const endpoint of endpointsToTry) {
-        try {
-          console.log(`Tentando conectar com ${endpoint.description}: ${endpoint.url}`);
-          
-          const queryResponse = await fetch(endpoint.url, {
-            method: 'POST',
-            headers: {
-              'Api-Key': pineconeApiKey,
-              'Content-Type': 'application/json',
-              'Accept': 'application/json'
-            },
-            body: JSON.stringify({
-              namespace: namespace,
-              topK: topK,
-              includeMetadata: true,
-              vector: createZeroVector(),
-              includeValues: false
-            }),
-            // Adicionar timeout para não ficar esperando indefinidamente
-            signal: AbortSignal.timeout(10000)
-          });
-          
-          if (!queryResponse.ok) {
-            console.error(`Falha no endpoint ${endpoint.description}: ${queryResponse.status} ${queryResponse.statusText}`);
-            continue; // Tentar próximo endpoint
-          }
-          
-          const queryResult = await queryResponse.json();
-          console.log("Resposta do Pinecone:", JSON.stringify(queryResult).substring(0, 200) + "...");
-          
-          if (queryResult.matches && queryResult.matches.length > 0) {
-            documentos = queryResult.matches.map((match: any) => ({
-              id: match.id,
-              ...match.metadata
-            }));
-            
-            console.log(`✅ SUCESSO! Encontrados ${documentos.length} documentos reais no Pinecone.`);
-            connected = true;
-            
-            toast({
-              title: "Conectado ao Pinecone",
-              description: `${documentos.length} documentos reais carregados com sucesso.`
-            });
-            
-            break; // Sair do loop após sucesso
-          } else {
-            console.log(`Nenhum documento encontrado no endpoint ${endpoint.description}`);
-          }
-        } catch (error) {
-          console.error(`Erro ao tentar conectar com ${endpoint.description}:`, error);
-          // Continuar para o próximo endpoint
-        }
-      }
-      
-      // Se não conseguiu conectar com nenhum endpoint, usar dados mockados
-      if (!connected || documentos.length === 0) {
-        console.warn("Não foi possível obter dados reais do Pinecone. Usando dados de demonstração temporariamente.");
-        toast({
-          title: "Erro na conexão com Pinecone",
-          description: "Usando dados de demonstração temporários. Verifique sua conexão ou configurações da API.",
-          variant: "destructive"
-        });
-        return mockDocumentos;
-      }
-      
-      return documentos;
-    } catch (error) {
-      console.error("Erro ao buscar documentos do Pinecone:", error);
-      toast({
-        title: "Erro na conexão",
-        description: "Usando dados temporários para visualização. Erro: " + (error instanceof Error ? error.message : String(error)),
-        variant: "destructive"
+        signal: AbortSignal.timeout(10000)
       });
       
-      return mockDocumentos;
+      if (!indexInfoResponse.ok) {
+        console.error(`Falha ao obter informações do índice: ${indexInfoResponse.status} ${indexInfoResponse.statusText}`);
+        throw new Error(`Não foi possível obter informações do índice: ${indexInfoResponse.statusText}`);
+      }
+      
+      const indexInfo = await indexInfoResponse.json();
+      console.log("Informações do índice obtidas:", indexInfo);
+      
+      // 2. Use as informações para construir o host de consulta correto
+      let host;
+      if (indexInfo.status && indexInfo.status.host) {
+        host = indexInfo.status.host;
+      } else if (indexInfo.host) {
+        host = indexInfo.host;
+      } else {
+        throw new Error("Host do índice não encontrado na resposta");
+      }
+      
+      const queryUrl = `https://${indexName}-${host}/vectors/query`;
+      console.log("URL final de consulta:", queryUrl);
+      
+      // 3. Agora faça a consulta real com o vetor zero (como no Python)
+      const queryResponse = await fetch(queryUrl, {
+        method: 'POST',
+        headers: {
+          'Api-Key': pineconeApiKey,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({
+          namespace: namespace,
+          topK: topK,
+          includeMetadata: true,
+          vector: Array(384).fill(0),  // Vetor de 384 dimensões preenchido com zeros
+          includeValues: false
+        }),
+        signal: AbortSignal.timeout(15000)
+      });
+      
+      if (!queryResponse.ok) {
+        console.error(`Falha na consulta ao Pinecone: ${queryResponse.status} ${queryResponse.statusText}`);
+        throw new Error(`Consulta ao Pinecone falhou: ${queryResponse.statusText}`);
+      }
+      
+      const queryResult = await queryResponse.json();
+      console.log("Resposta da consulta Pinecone:", queryResult);
+      
+      if (!queryResult.matches || queryResult.matches.length === 0) {
+        console.warn("Nenhum documento encontrado no Pinecone para este namespace");
+        toast({
+          title: "Sem documentos",
+          description: "Nenhum documento encontrado no namespace indicado"
+        });
+        return [];
+      }
+      
+      // Extrair metadados dos resultados
+      const documentos = queryResult.matches.map((match: any) => ({
+        id: match.id,
+        ...match.metadata
+      }));
+      
+      console.log(`✅ Encontrados ${documentos.length} documentos reais no Pinecone.`);
+      
+      toast({
+        title: "Conectado ao Pinecone",
+        description: `${documentos.length} documentos reais carregados com sucesso.`
+      });
+      
+      return documentos;
+      
+    } catch (error) {
+      console.error("Erro ao buscar documentos do Pinecone:", error);
+      
+      // Método alternativo: Tentar abordagem direta similar aos endpoints anteriores
+      try {
+        console.log("Tentando método alternativo de conexão...");
+        const indexName = configService.getIndexName();
+        const apiKeys = configService.getApiKeys();
+        const pineconeApiKey = apiKeys.PINECONE_API_KEY;
+        const namespace = "1";
+        
+        // Usar um dos endpoints diretos que funcionaram antes
+        const endpointsToTry = [
+          `https://${indexName}-default.svc.${indexName}.pinecone.io/vectors/query`,
+          `https://${indexName}-yjxbz01.svc.gcp-starter.pinecone.io/vectors/query`,
+          `https://${indexName}-c6ervab.svc.us-east-1-aws.pinecone.io/vectors/query`
+        ];
+        
+        for (const endpoint of endpointsToTry) {
+          try {
+            console.log(`Tentando endpoint alternativo: ${endpoint}`);
+            
+            const response = await fetch(endpoint, {
+              method: 'POST',
+              headers: {
+                'Api-Key': pineconeApiKey,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify({
+                namespace: namespace,
+                topK: topK,
+                includeMetadata: true,
+                vector: Array(384).fill(0),
+                includeValues: false
+              }),
+              signal: AbortSignal.timeout(8000)
+            });
+            
+            if (response.ok) {
+              const result = await response.json();
+              if (result.matches && result.matches.length > 0) {
+                const docs = result.matches.map((match: any) => ({
+                  id: match.id,
+                  ...match.metadata
+                }));
+                
+                console.log(`✅ Método alternativo bem-sucedido com ${docs.length} documentos`);
+                
+                toast({
+                  title: "Conectado ao Pinecone",
+                  description: `${docs.length} documentos reais carregados com sucesso (método alt).`
+                });
+                
+                return docs;
+              }
+            }
+          } catch (endpointError) {
+            console.error(`Falha no endpoint alternativo ${endpoint}:`, endpointError);
+          }
+        }
+        
+        throw new Error("Todos os métodos de conexão falharam");
+      } catch (altError) {
+        console.error("Método alternativo também falhou:", altError);
+        
+        toast({
+          title: "Erro na conexão com Pinecone",
+          description: "Usando dados de demonstração temporários. Erro: " + (error instanceof Error ? error.message : String(error)),
+          variant: "destructive"
+        });
+        
+        // Como último recurso, use dados de demonstração
+        return mockDocumentos;
+      }
     }
   },
 

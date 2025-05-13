@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -9,8 +10,9 @@ import {
 } from "@/components/ui/accordion";
 import { toast } from "@/hooks/use-toast";
 import { pineconeService } from "@/services/pineconeService";
-import { Trash, Save, CheckSquare, Filter, RefreshCw, Database } from "lucide-react";
+import { Trash, Save, CheckSquare, Filter, RefreshCw, Database, AlertCircle } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
 interface MetadataFilterProps {
   userId: string;
@@ -25,15 +27,18 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
   const [deleting, setDeleting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedAccordions, setExpandedAccordions] = useState<string[]>([]);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [usingMockData, setUsingMockData] = useState(false);
   
   // Colunas para filtrar
   const filterColumns = [
     'nome_arquivo', 'categoria', 'departamento', 'responsavel', 'prioridade',
-    'subcategoria', 'status', 'tipo_documento', 'filtro8', 'filtro9', 'filtro10'
+    'subcategoria', 'status', 'tipo_documento', 'data_processamento', 'filtro8', 'filtro9', 'filtro10'
   ];
   
   const fetchData = async (isRefresh: boolean = false) => {
     try {
+      setConnectionError(null);
       if (isRefresh) {
         setRefreshing(true);
       } else {
@@ -45,6 +50,10 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
       
       const docs = await pineconeService.buscarDocumentos("1");
       console.log("Documentos recebidos:", docs);
+      
+      // Verificar se são dados reais ou mockados
+      setUsingMockData(docs.length > 0 && docs[0].id === "doc1");
+      
       setDocuments(docs);
       
       // Carregar filtros salvos
@@ -67,14 +76,15 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
         toast({
           title: docs.length > 0 ? "Dados atualizados" : "Sem documentos",
           description: docs.length > 0 
-            ? `${docs.length} documentos carregados com sucesso.`
+            ? `${docs.length} documentos ${usingMockData ? "de demonstração" : "reais"} carregados.`
             : "Nenhum documento encontrado no Pinecone."
         });
       }
     } catch (error) {
       console.error("Erro ao carregar dados:", error);
+      setConnectionError(error instanceof Error ? error.message : "Erro desconhecido de conexão");
       toast({
-        title: "Erro",
+        title: "Erro de conexão",
         description: "Não foi possível carregar os metadados do Pinecone.",
         variant: "destructive"
       });
@@ -227,7 +237,7 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
       <div className="flex flex-col items-center justify-center p-12">
         <div className="animate-spin h-12 w-12 border-4 border-primary border-t-transparent rounded-full mb-4"></div>
         <p className="text-lg font-medium">Conectando ao Pinecone...</p>
-        <p className="text-sm text-muted-foreground mt-2">Buscando metadados reais no namespace 1</p>
+        <p className="text-sm text-muted-foreground mt-2">Buscando metadados no namespace 1</p>
       </div>
     );
   }
@@ -249,9 +259,6 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
   const filteredCount = getFilteredCount();
   const totalCount = documents.length;
   
-  // Verificar se estamos usando dados reais ou mock
-  const usandoDadosReais = documents.length > 0 && documents[0].id !== "doc1";
-  
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -261,8 +268,8 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
             Filtros de Metadados
           </h2>
           <p className="text-sm text-muted-foreground mt-1 flex items-center">
-            <span className={`inline-block w-2 h-2 rounded-full mr-1 ${usandoDadosReais ? 'bg-green-500' : 'bg-amber-500'}`}></span>
-            {usandoDadosReais ? 'Dados reais do Pinecone' : 'Dados de demonstração'} • 
+            <span className={`inline-block w-2 h-2 rounded-full mr-1 ${usingMockData ? 'bg-amber-500' : 'bg-green-500'}`}></span>
+            {usingMockData ? 'Dados de demonstração' : 'Dados reais do Pinecone'} • 
             {filteredCount} de {totalCount} documentos correspondem aos filtros atuais
           </p>
         </div>
@@ -296,8 +303,32 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
         </div>
       </div>
       
+      {connectionError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Erro de conexão</AlertTitle>
+          <AlertDescription>
+            Não foi possível conectar ao Pinecone: {connectionError}
+            <Button variant="outline" size="sm" className="mt-2" onClick={handleRefresh}>
+              Tentar novamente
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      {usingMockData && (
+        <Alert className="mb-4 bg-amber-50 text-amber-900 border-amber-200">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Dados de demonstração</AlertTitle>
+          <AlertDescription>
+            Estamos exibindo dados de demonstração. Clique em "Atualizar dados" para tentar conectar novamente ao Pinecone.
+          </AlertDescription>
+        </Alert>
+      )}
+      
       {documents.length === 0 ? (
         <div className="p-8 text-center border rounded-lg bg-muted/10">
+          <Database className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <p className="text-lg font-medium mb-2">Nenhum documento encontrado</p>
           <p className="text-muted-foreground mb-4">
             Não há documentos disponíveis para filtrar no namespace 1.
@@ -361,7 +392,7 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
                     
                     {refreshing ? (
                       // Esqueletos de carregamento durante o refresh
-                      Array(uniqueValues.length).fill(0).map((_, idx) => (
+                      Array(Math.min(5, uniqueValues.length || 3)).fill(0).map((_, idx) => (
                         <div key={`skeleton-${idx}`} className="flex items-center space-x-2 py-1">
                           <Skeleton className="h-4 w-4" />
                           <Skeleton className="h-4 w-[120px]" />
@@ -398,7 +429,7 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
       <div className="flex justify-between pt-4">
         <Button 
           onClick={handleSaveFilters} 
-          disabled={saving}
+          disabled={saving || documents.length === 0}
           className="w-[48%]"
         >
           <Save className="mr-1.5 h-4 w-4" />
@@ -406,7 +437,7 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
         </Button>
         <Button 
           onClick={handleDeleteFilters} 
-          disabled={deleting}
+          disabled={deleting || documents.length === 0}
           variant="destructive"
           className="w-[48%]"
         >
