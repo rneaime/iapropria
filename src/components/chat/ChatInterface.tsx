@@ -1,9 +1,8 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Send, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { CodeBlock } from "@/components/ui/code-block";
 import { ChatInput } from "@/components/chat/ChatInput";
 
@@ -13,7 +12,7 @@ interface Message {
 }
 
 interface ChatInterfaceProps {
-  title: string;
+  title?: string;
   initialMessages?: Message[];
   onSendMessage: (message: string, urls?: string[]) => void;
   isLoading?: boolean;
@@ -22,7 +21,6 @@ interface ChatInterfaceProps {
 }
 
 export function ChatInterface({ 
-  title, 
   initialMessages = [], 
   onSendMessage, 
   isLoading = false,
@@ -140,10 +138,7 @@ export function ChatInterface({
   
   return (
     <Card className="w-full h-full flex flex-col">
-      <CardHeader className="bg-burgundy text-white rounded-t-md p-4">
-        <CardTitle>{title}</CardTitle>
-      </CardHeader>
-      <CardContent className="p-0 flex flex-col h-[calc(100%-76px)] overflow-hidden">
+      <CardContent className="p-0 flex flex-col h-full overflow-hidden">
         <div className="flex-1 overflow-y-auto">
           <div className="p-4">
             {messages.map((message, index) => (

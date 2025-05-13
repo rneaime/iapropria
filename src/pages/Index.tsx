@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -173,11 +172,10 @@ const Index = () => {
       activeTab={activeTab}
       setActiveTab={setActiveTab}
     >
-      <div className="container p-4">
+      <div className="h-full">
         {activeTab === "atendimento" && (
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <h2 className="text-2xl font-bold">Atendimento IA</h2>
+          <div className="space-y-4 h-full">
+            <div className="flex justify-end mb-4">
               <div className="flex space-x-2">
                 <Button variant="outline" onClick={() => handleLogout(true)}>
                   Sair e Salvar Conversa
@@ -188,9 +186,8 @@ const Index = () => {
               </div>
             </div>
             
-            <div className="h-[calc(100vh-250px)]">
+            <div className="h-[calc(100vh-200px)]">
               <ChatInterface
-                title="Assistente de Atendimento IAprópria"
                 initialMessages={initialMessages}
                 onSendMessage={handleSendMessage}
                 isLoading={isLoading}
@@ -202,12 +199,9 @@ const Index = () => {
         )}
         
         {activeTab === "conversa" && (
-          <div className="space-y-4">
-            <h2 className="text-2xl font-bold">Conversa IA</h2>
-            
-            <div className="h-[calc(100vh-250px)]">
+          <div className="space-y-4 h-full">
+            <div className="h-[calc(100vh-180px)]">
               <ChatInterface
-                title="Assistente de Conversa IAprópria"
                 initialMessages={initialMessages}
                 onSendMessage={handleSendMessage}
                 isLoading={isLoading}

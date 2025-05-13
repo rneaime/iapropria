@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useToast } from "@/hooks/use-toast";
 import { ChatInterface } from "@/components/chat/ChatInterface";
@@ -81,9 +80,8 @@ export function HelpChat() {
   };
   
   return (
-    <div className="h-[400px]">
+    <div className="h-[600px]">
       <ChatInterface
-        title="Assistente de Ajuda IAprópria"
         initialMessages={messages}
         onSendMessage={handleSendMessage}
         isLoading={isLoading}

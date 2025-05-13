@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, LogOut, Settings, MessageSquare, Image, Upload, Filter, History, HelpCircle } from 'lucide-react';
+import { User, LogOut } from 'lucide-react';
 import { aiService } from '@/services/aiService';
+import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from '@/components/layout/AppSidebar';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -25,9 +27,10 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
   return (
     <div className="min-h-screen bg-burgundy-subtle flex flex-col">
       {/* Header - Using a lighter burgundy */}
-      <header className="bg-burgundy-light text-white shadow-md">
+      <header className="bg-burgundy-light text-white shadow-md z-10">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
           <div className="flex items-center space-x-2">
+            <SidebarTrigger className="text-white" />
             <div className="font-bold text-xl">IAprópria</div>
           </div>
           
@@ -47,57 +50,21 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
         </div>
       </header>
       
-      {/* Navigation Tabs - Keeping dark burgundy */}
-      <div className="bg-burgundy text-white">
-        <div className="container mx-auto px-4">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full justify-start bg-burgundy flex">
-              <TabsTrigger value="atendimento" className="py-3 text-white data-[state=active]:bg-burgundy-light data-[state=active]:text-white/90">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Atendimento IA
-              </TabsTrigger>
-              <TabsTrigger value="conversa" className="py-3 text-white data-[state=active]:bg-burgundy-light data-[state=active]:text-white/90">
-                <MessageSquare className="h-4 w-4 mr-2" />
-                Conversa IA
-              </TabsTrigger>
-              <TabsTrigger value="historico" className="py-3 text-white data-[state=active]:bg-burgundy-light data-[state=active]:text-white/90">
-                <History className="h-4 w-4 mr-2" />
-                Histórico
-              </TabsTrigger>
-              <TabsTrigger value="filtros" className="py-3 text-white data-[state=active]:bg-burgundy-light data-[state=active]:text-white/90">
-                <Filter className="h-4 w-4 mr-2" />
-                Filtros
-              </TabsTrigger>
-              <TabsTrigger value="gerar-imagem" className="py-3 text-white data-[state=active]:bg-burgundy-light data-[state=active]:text-white/90">
-                <Image className="h-4 w-4 mr-2" />
-                Gerar Imagem
-              </TabsTrigger>
-              <TabsTrigger value="enviar-arquivo" className="py-3 text-white data-[state=active]:bg-burgundy-light data-[state=active]:text-white/90">
-                <Upload className="h-4 w-4 mr-2" />
-                Upload
-              </TabsTrigger>
-              <TabsTrigger value="parametros" className="py-3 text-white data-[state=active]:bg-burgundy-light data-[state=active]:text-white/90">
-                <Settings className="h-4 w-4 mr-2" />
-                Configurações
-              </TabsTrigger>
-              <TabsTrigger value="ajuda" className="py-3 text-white data-[state=active]:bg-burgundy-light data-[state=active]:text-white/90">
-                <HelpCircle className="h-4 w-4 mr-2" />
-                Ajuda
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
+      <div className="flex-1 flex">
+        <SidebarProvider defaultOpen={true}>
+          <div className="flex w-full">
+            <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+            <SidebarInset>
+              <main className="flex-1 p-6">{children}</main>
+              <footer className="bg-burgundy text-white py-4">
+                <div className="container mx-auto px-4 text-center text-sm">
+                  &copy; {new Date().getFullYear()} IAprópria. Todos os direitos reservados.
+                </div>
+              </footer>
+            </SidebarInset>
+          </div>
+        </SidebarProvider>
       </div>
-      
-      {/* Main Content */}
-      <main className="flex-1 py-6">{children}</main>
-      
-      {/* Footer */}
-      <footer className="bg-burgundy text-white py-4">
-        <div className="container mx-auto px-4 text-center text-sm">
-          &copy; {new Date().getFullYear()} IAprópria. Todos os direitos reservados.
-        </div>
-      </footer>
     </div>
   );
 }
