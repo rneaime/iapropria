@@ -110,7 +110,7 @@ export const pineconeService = {
       const indexName = configService.getIndexName() || INDEX_NAME;
       console.log(`Usando índice: ${indexName}`);
       
-      // Utilizando a nova API do Pinecone
+      // Conecta diretamente ao índice com o host especificado
       const index = pineconeClient.index(indexName);
       
       // Namespace fixado como "1" conforme solicitado
@@ -490,56 +490,37 @@ export const pineconeService = {
   // Método para verificar a conexão com Pinecone
   testConnection: async (): Promise<boolean> => {
     try {
-      // Tenta inicializar o cliente se ainda não existir
-      if (!pineconeClient) {
-        pineconeClient = initPineconeClient();
-        if (!pineconeClient) {
-          throw new Error("Não foi possível inicializar o cliente Pinecone");
-        }
-      }
-      
-      // Tentativa direta de consulta usando o host especificado
-      console.log("Testando conexão direta com host específico:", PINECONE_HOST);
-      
+      // Inicializa o cliente Pinecone
       const apiKeys = configService.getApiKeys();
       const pineconeApiKey = apiKeys.PINECONE_API_KEY;
       
-      // Tenta fazer uma consulta simples via REST API
-      const response = await fetch(`${PINECONE_HOST}/vectors/query`, {
-        method: 'POST',
-        headers: {
-          'Api-Key': pineconeApiKey,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          namespace: "1",
-          topK: 1,
-          includeMetadata: true,
-          vector: Array(384).fill(0),
-          includeValues: false
-        }),
-        signal: AbortSignal.timeout(5000)
-      });
-      
-      if (response.ok) {
-        console.log("Conexão com host específico estabelecida com sucesso!");
-        
-        toast({
-          title: "Conexão com Pinecone estabelecida",
-          description: `Conectado com sucesso ao host específico.`
-        });
-        
-        return true;
+      if (!pineconeApiKey) {
+        throw new Error("Chave da API Pinecone não configurada");
       }
       
-      // Fallback para a API de listagem de índices
-      const indexes = await pineconeClient.listIndexes();
-      console.log("Índices disponíveis:", indexes);
+      // Cria um novo cliente Pinecone para o teste
+      const pc = new Pinecone({ apiKey: pineconeApiKey });
+      pineconeClient = pc; // Salva para uso futuro
+      
+      console.log("Testando conexão direta com host específico:", PINECONE_HOST);
+      
+      // Conecta ao índice especificado
+      const indexName = configService.getIndexName() || INDEX_NAME;
+      const index = pc.index(indexName);
+      
+      // Testa a conexão fazendo uma query simples
+      const queryResponse = await index.query({
+        vector: Array(384).fill(0),
+        topK: 1,
+        includeMetadata: true,
+        filter: { namespace: "1" }
+      });
+      
+      console.log("Conexão estabelecida com sucesso:", queryResponse);
       
       toast({
         title: "Conexão com Pinecone estabelecida",
-        description: `Conectado com sucesso. Índices disponíveis: ${indexes.indexes?.length || 0}`
+        description: "Conectado com sucesso ao host específico."
       });
       
       return true;
@@ -555,28 +536,34 @@ export const pineconeService = {
           throw new Error("Chave da API Pinecone não configurada");
         }
         
-        // Tenta consulta direta de descrição via cabeçalho OPTIONS
-        console.log("Testando conexão com OPTIONS request para:", PINECONE_HOST);
-        const response = await fetch(PINECONE_HOST, {
-          method: 'OPTIONS',
+        console.log("Testando conexão REST API com:", PINECONE_HOST);
+        
+        const response = await fetch(`${PINECONE_HOST}/vectors/query`, {
+          method: 'POST',
           headers: {
             'Api-Key': pineconeApiKey,
-            'Accept': 'application/json'
+            'Content-Type': 'application/json'
           },
-          signal: AbortSignal.timeout(3000)
+          body: JSON.stringify({
+            namespace: "1",
+            topK: 1,
+            includeMetadata: true,
+            vector: Array(384).fill(0),
+            includeValues: false
+          }),
+          signal: AbortSignal.timeout(5000)
         });
         
-        if (response.ok || response.status === 200 || response.status === 204) {
-          console.log("Resposta OPTIONS do Pinecone:", response.status);
-          
+        if (response.ok) {
+          console.log("Conexão REST bem-sucedida!");
           toast({
-            title: "Conexão com Pinecone detectada",
-            description: "O servidor Pinecone está respondendo a verificações de CORS"
+            title: "Conexão com Pinecone estabelecida",
+            description: "Conectado com sucesso via REST API."
           });
           return true;
         }
         
-        throw new Error(`Falha na conexão REST: ${response.statusText}`);
+        throw new Error(`Falha na conexão REST: ${response.status} ${response.statusText}`);
       } catch (restError) {
         console.error("Erro no teste de conexão REST:", restError);
         
