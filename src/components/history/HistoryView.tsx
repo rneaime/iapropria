@@ -4,6 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import { Download, Trash2 } from "lucide-react";
 
 interface Message {
   pergunta: string;
@@ -91,6 +98,13 @@ export function HistoryView({ userId }: { userId: string }) {
     });
   };
 
+  // Determina a cor do item do menu com base no número de mensagens
+  const getMenuItemColor = (messageCount: number) => {
+    if (messageCount > 3) return "text-green-600 hover:text-green-700";
+    if (messageCount > 1) return "text-blue-600 hover:text-blue-700";
+    return "text-amber-600 hover:text-amber-700";
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center p-8">Carregando histórico...</div>;
   }
@@ -110,16 +124,36 @@ export function HistoryView({ userId }: { userId: string }) {
                 <ul className="space-y-3">
                   {history.map(entry => (
                     <li key={entry.id}>
-                      <Button 
-                        variant={selectedEntry?.id === entry.id ? "default" : "outline"} 
-                        className="w-full justify-start text-left h-auto py-3"
-                        onClick={() => handleSelectEntry(entry)}
-                      >
-                        <div>
-                          <p className="font-medium">{entry.title}</p>
-                          <p className="text-sm text-muted-foreground">{entry.date}</p>
-                        </div>
-                      </Button>
+                      <ContextMenu>
+                        <ContextMenuTrigger>
+                          <Button 
+                            variant={selectedEntry?.id === entry.id ? "default" : "outline"} 
+                            className="w-full justify-start text-left h-auto py-3"
+                            onClick={() => handleSelectEntry(entry)}
+                          >
+                            <div>
+                              <p className="font-medium">{entry.title}</p>
+                              <p className="text-sm text-muted-foreground">{entry.date}</p>
+                            </div>
+                          </Button>
+                        </ContextMenuTrigger>
+                        <ContextMenuContent className="w-48">
+                          <ContextMenuItem 
+                            onClick={() => handleExportEntry(entry)}
+                            className={getMenuItemColor(entry.messages.length)}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Exportar
+                          </ContextMenuItem>
+                          <ContextMenuItem 
+                            onClick={() => handleDeleteEntry(entry.id)}
+                            className="text-red-600 hover:text-red-700"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Excluir
+                          </ContextMenuItem>
+                        </ContextMenuContent>
+                      </ContextMenu>
                     </li>
                   ))}
                 </ul>
@@ -142,10 +176,10 @@ export function HistoryView({ userId }: { userId: string }) {
                 </CardTitle>
                 <div className="flex space-x-2">
                   <Button size="sm" variant="outline" onClick={() => handleExportEntry(selectedEntry)}>
-                    Exportar
+                    <Download className="h-4 w-4 mr-1" /> Exportar
                   </Button>
                   <Button size="sm" variant="destructive" onClick={() => handleDeleteEntry(selectedEntry.id)}>
-                    Excluir
+                    <Trash2 className="h-4 w-4 mr-1" /> Excluir
                   </Button>
                 </div>
               </CardHeader>
