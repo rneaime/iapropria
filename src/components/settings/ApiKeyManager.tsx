@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "@/components/ui/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { BadgeCheck, CheckCircle } from "lucide-react";
+import { configService } from "@/services/configService";
 
 interface ApiKey {
   id: string;
@@ -20,31 +21,7 @@ interface ApiKey {
 }
 
 export function ApiKeyManager() {
-  const [apiKeys, setApiKeys] = useState<ApiKey[]>([
-    {
-      id: "1",
-      name: "Groq API",
-      key: "gsk_abc123def456...",
-      status: 'connected',
-      type: 'api'
-    },
-    {
-      id: "2",
-      name: "Pinecone",
-      key: "pc_abc123def456...",
-      status: 'connected',
-      type: 'api'
-    },
-    {
-      id: "3",
-      name: "PostgreSQL",
-      key: "DB_USER=postgres",
-      secret: "DB_PASSWORD=******",
-      url: "localhost:5432/iapropria",
-      status: 'connected',
-      type: 'database'
-    }
-  ]);
+  const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [selectedApi, setSelectedApi] = useState<string>('');
   const [apiName, setApiName] = useState<string>('');
   const [apiKey, setApiKey] = useState<string>('');
@@ -53,6 +30,74 @@ export function ApiKeyManager() {
   const [apiType, setApiType] = useState<'api' | 'database'>('api');
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
+
+  // Carregar chaves salvas ao iniciar
+  useEffect(() => {
+    loadSavedKeys();
+  }, []);
+
+  const loadSavedKeys = () => {
+    const savedKeys = configService.getApiKeys();
+    const dbConfig = configService.getDbConfig();
+    const indexName = configService.getIndexName();
+
+    const keysArray: ApiKey[] = [];
+
+    // Adicionar chaves de API
+    if (savedKeys.GROQ_API_KEY) {
+      keysArray.push({
+        id: "groq",
+        name: "Groq API",
+        key: savedKeys.GROQ_API_KEY,
+        status: 'connected',
+        type: 'api'
+      });
+    }
+
+    if (savedKeys.PINECONE_API_KEY) {
+      keysArray.push({
+        id: "pinecone",
+        name: "Pinecone",
+        key: savedKeys.PINECONE_API_KEY,
+        url: indexName,
+        status: 'connected',
+        type: 'api'
+      });
+    }
+
+    if (savedKeys.OPENAI_API_KEY) {
+      keysArray.push({
+        id: "openai",
+        name: "OpenAI",
+        key: savedKeys.OPENAI_API_KEY,
+        status: 'connected',
+        type: 'api'
+      });
+    }
+
+    if (savedKeys.STABLE_DIFFUSION_API_KEY) {
+      keysArray.push({
+        id: "stability",
+        name: "Stability AI",
+        key: savedKeys.STABLE_DIFFUSION_API_KEY,
+        status: 'connected',
+        type: 'api'
+      });
+    }
+
+    // Adicionar configuração do banco de dados
+    keysArray.push({
+      id: "postgres",
+      name: "PostgreSQL",
+      key: `${dbConfig.USER}@${dbConfig.HOST}`,
+      secret: dbConfig.PASSWORD,
+      url: `${dbConfig.HOST}:${dbConfig.PORT}/${dbConfig.NAME}`,
+      status: 'connected',
+      type: 'database'
+    });
+
+    setApiKeys(keysArray);
+  };
 
   // Carregar os detalhes da API selecionada
   useEffect(() => {
@@ -93,30 +138,69 @@ export function ApiKeyManager() {
 
     setIsConnecting(true);
     
-    // Simulação de conexão
-    setTimeout(() => {
-      if (isEditing) {
-        // Editar API existente
-        setApiKeys(prevKeys => prevKeys.map(api => 
-          api.id === selectedApi ? 
-          { ...api, name: apiName, key: apiKey, secret: apiSecret, url: apiUrl, type: apiType, status: 'connected' } : 
-          api
-        ));
-      } else {
-        // Adicionar nova API
-        setApiKeys(prevKeys => [
-          ...prevKeys, 
-          {
-            id: Date.now().toString(),
-            name: apiName,
-            key: apiKey,
-            secret: apiSecret || undefined,
-            url: apiUrl || undefined,
-            type: apiType,
-            status: 'connected'
-          }
-        ]);
+    try {
+      // Salvar as chaves conforme o tipo de API
+      if (apiType === 'api') {
+        const currentKeys = configService.getApiKeys();
+        let updatedKeys = { ...currentKeys };
+        
+        switch(apiName.toLowerCase()) {
+          case 'groq api':
+          case 'groq':
+            updatedKeys.GROQ_API_KEY = apiKey;
+            break;
+          case 'pinecone':
+            updatedKeys.PINECONE_API_KEY = apiKey;
+            if (apiUrl) {
+              configService.saveIndexName(apiUrl);
+            }
+            break;
+          case 'openai':
+            updatedKeys.OPENAI_API_KEY = apiKey;
+            break;
+          case 'stability ai':
+          case 'stable diffusion':
+            updatedKeys.STABLE_DIFFUSION_API_KEY = apiKey;
+            break;
+          default:
+            // Caso genérico para outras APIs
+            break;
+        }
+
+        configService.saveApiKeys(updatedKeys);
+      } else if (apiType === 'database') {
+        // Para banco de dados PostgreSQL
+        const dbConfig = configService.getDbConfig();
+        const newConfig = { ...dbConfig };
+        
+        // Extrair informações da entrada do usuário
+        if (apiUrl) {
+          const urlParts = apiUrl.split(':');
+          const hostPart = urlParts[0];
+          const remainingPart = urlParts[1] || '';
+          const portDbParts = remainingPart.split('/');
+          
+          newConfig.HOST = hostPart;
+          if (portDbParts[0]) newConfig.PORT = portDbParts[0];
+          if (portDbParts[1]) newConfig.NAME = portDbParts[1];
+        }
+        
+        // Extrair usuário da chave
+        if (apiKey) {
+          const userParts = apiKey.split('@');
+          newConfig.USER = userParts[0];
+        }
+        
+        // Definir senha
+        if (apiSecret) {
+          newConfig.PASSWORD = apiSecret;
+        }
+        
+        configService.saveDbConfig(newConfig);
       }
+
+      // Atualizar a lista de chaves salvas
+      loadSavedKeys();
 
       toast({
         title: "Conexão bem-sucedida",
@@ -124,21 +208,66 @@ export function ApiKeyManager() {
       });
 
       resetForm();
+    } catch (error) {
+      console.error("Erro ao salvar configuração:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível salvar a configuração."
+      });
+    } finally {
       setIsConnecting(false);
-    }, 1500);
+    }
   };
 
   const handleDelete = (id: string) => {
-    setApiKeys(prevKeys => prevKeys.filter(api => api.id !== id));
-    
-    if (selectedApi === id) {
-      resetForm();
-    }
+    const api = apiKeys.find(api => api.id === id);
+    if (!api) return;
 
-    toast({
-      title: "API removida",
-      description: "A conexão foi removida com sucesso."
-    });
+    try {
+      if (api.type === 'api') {
+        const currentKeys = configService.getApiKeys();
+        let updatedKeys = { ...currentKeys };
+        
+        switch(api.name.toLowerCase()) {
+          case 'groq api':
+          case 'groq':
+            updatedKeys.GROQ_API_KEY = '';
+            break;
+          case 'pinecone':
+            updatedKeys.PINECONE_API_KEY = '';
+            break;
+          case 'openai':
+            updatedKeys.OPENAI_API_KEY = '';
+            break;
+          case 'stability ai':
+          case 'stable diffusion':
+            updatedKeys.STABLE_DIFFUSION_API_KEY = '';
+            break;
+        }
+        
+        configService.saveApiKeys(updatedKeys);
+      }
+
+      // Remover da lista local
+      setApiKeys(prevKeys => prevKeys.filter(api => api.id !== id));
+      
+      if (selectedApi === id) {
+        resetForm();
+      }
+
+      toast({
+        title: "API removida",
+        description: "A conexão foi removida com sucesso."
+      });
+    } catch (error) {
+      console.error("Erro ao remover conexão:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro",
+        description: "Não foi possível remover a conexão."
+      });
+    }
   };
 
   return (
@@ -282,7 +411,9 @@ export function ApiKeyManager() {
             <BadgeCheck className="h-4 w-4" />
             <AlertTitle>Status da conexão</AlertTitle>
             <AlertDescription>
-              Todas as conexões estão ativas e funcionando normalmente.
+              {apiKeys.length > 0 
+                ? "Todas as conexões estão ativas e funcionando normalmente." 
+                : "Nenhuma conexão configurada. Adicione suas chaves de API para começar."}
             </AlertDescription>
           </Alert>
         </CardContent>
