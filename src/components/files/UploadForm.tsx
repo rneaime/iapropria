@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/accordion";
 import { authService } from '@/services/authService';
 import { Loader2 } from "lucide-react";
+import { UpsertMetadata } from '@/services/upsertService';
 
 interface UploadFormProps {
   userId?: string;
@@ -31,6 +32,21 @@ export function UploadForm({ userId = "1" }: UploadFormProps) {
   const [folderPath, setFolderPath] = useState<string>("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
+  const [uploadedFile, setUploadedFile] = useState<{id: string, name: string, path: string} | null>(null);
+  
+  // Estado para metadados
+  const [metadata, setMetadata] = useState<UpsertMetadata>({
+    tipo_documento: '',
+    departamento: '',
+    categoria: '',
+    subcategoria: '',
+    responsavel: '',
+    status: '',
+    prioridade: '',
+    filtro8: '',
+    filtro9: '',
+    filtro10: '',
+  });
   
   const handleFolderSave = () => {
     if (!folderPath.trim()) {
@@ -49,6 +65,13 @@ export function UploadForm({ userId = "1" }: UploadFormProps) {
       title: "Pasta configurada",
       description: `Caminho da pasta salvo: ${folderPath}`,
     });
+  };
+  
+  const handleMetadataChange = (field: keyof UpsertMetadata, value: string) => {
+    setMetadata(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
   
   const handleFileUpload = () => {
@@ -70,17 +93,35 @@ export function UploadForm({ userId = "1" }: UploadFormProps) {
       return;
     }
     
+    if (!metadata.tipo_documento) {
+      toast({
+        title: "Tipo de documento obrigatório",
+        description: "Por favor, informe o tipo de documento",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     // Simulação de upload
     setIsUploading(true);
     
     // Em um aplicativo real, isso seria uma chamada à API para upload
     setTimeout(() => {
       console.log(`Arquivo ${selectedFile.name} enviado para ${folderPath}`);
+      console.log("Metadados:", metadata);
       
       toast({
         title: "Arquivo enviado",
         description: `${selectedFile.name} foi enviado com sucesso!`,
       });
+      
+      // Salvar informações do arquivo para uso no UpsertForm
+      const newFile = {
+        id: String(Date.now()),
+        name: selectedFile.name,
+        path: `${folderPath}/${selectedFile.name}`
+      };
+      setUploadedFile(newFile);
       
       setSelectedFile(null);
       setIsUploading(false);
@@ -159,27 +200,117 @@ export function UploadForm({ userId = "1" }: UploadFormProps) {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Input
-                  id="file-input"
-                  type="file"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      if (isValidFileType(file)) {
-                        console.log("Arquivo válido selecionado:", file.name);
-                        setSelectedFile(file);
-                      } else {
-                        console.error("Formato de arquivo inválido:", file.type);
-                        toast({
-                          title: "Formato de arquivo inválido",
-                          description: "O formato do arquivo selecionado não é suportado.",
-                          variant: "destructive"
-                        });
-                        e.target.value = "";
+                <div className="space-y-4">
+                  <Input
+                    id="file-input"
+                    type="file"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        if (isValidFileType(file)) {
+                          console.log("Arquivo válido selecionado:", file.name);
+                          setSelectedFile(file);
+                        } else {
+                          console.error("Formato de arquivo inválido:", file.type);
+                          toast({
+                            title: "Formato de arquivo inválido",
+                            description: "O formato do arquivo selecionado não é suportado.",
+                            variant: "destructive"
+                          });
+                          e.target.value = "";
+                        }
                       }
-                    }
-                  }}
-                />
+                    }}
+                  />
+                  
+                  {selectedFile && (
+                    <>
+                      <h3 className="text-lg font-semibold mt-4">Metadados do Arquivo</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Tipo de Documento*</label>
+                          <Input 
+                            value={metadata.tipo_documento}
+                            onChange={(e) => handleMetadataChange('tipo_documento', e.target.value)}
+                            placeholder="Tipo de documento"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Departamento</label>
+                          <Input 
+                            value={metadata.departamento}
+                            onChange={(e) => handleMetadataChange('departamento', e.target.value)}
+                            placeholder="Departamento"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Categoria</label>
+                          <Input 
+                            value={metadata.categoria}
+                            onChange={(e) => handleMetadataChange('categoria', e.target.value)}
+                            placeholder="Categoria"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Subcategoria</label>
+                          <Input 
+                            value={metadata.subcategoria}
+                            onChange={(e) => handleMetadataChange('subcategoria', e.target.value)}
+                            placeholder="Subcategoria"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Responsável</label>
+                          <Input 
+                            value={metadata.responsavel}
+                            onChange={(e) => handleMetadataChange('responsavel', e.target.value)}
+                            placeholder="Responsável"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Status</label>
+                          <Input 
+                            value={metadata.status}
+                            onChange={(e) => handleMetadataChange('status', e.target.value)}
+                            placeholder="Status"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Prioridade</label>
+                          <Input 
+                            value={metadata.prioridade}
+                            onChange={(e) => handleMetadataChange('prioridade', e.target.value)}
+                            placeholder="Prioridade"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Filtro 8</label>
+                          <Input 
+                            value={metadata.filtro8}
+                            onChange={(e) => handleMetadataChange('filtro8', e.target.value)}
+                            placeholder="Filtro 8"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Filtro 9</label>
+                          <Input 
+                            value={metadata.filtro9}
+                            onChange={(e) => handleMetadataChange('filtro9', e.target.value)}
+                            placeholder="Filtro 9"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium mb-1">Filtro 10</label>
+                          <Input 
+                            value={metadata.filtro10}
+                            onChange={(e) => handleMetadataChange('filtro10', e.target.value)}
+                            placeholder="Filtro 10"
+                          />
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
               </CardContent>
               <CardFooter>
                 <Button 
@@ -199,7 +330,12 @@ export function UploadForm({ userId = "1" }: UploadFormProps) {
         <AccordionItem value="upsert">
           <AccordionTrigger>Processamento de Arquivos (Upsert)</AccordionTrigger>
           <AccordionContent>
-            <UpsertForm userId={userId} folderPath={folderPath} />
+            <UpsertForm 
+              userId={userId} 
+              folderPath={folderPath} 
+              uploadedFile={uploadedFile}
+              initialMetadata={metadata}
+            />
           </AccordionContent>
         </AccordionItem>
       </Accordion>

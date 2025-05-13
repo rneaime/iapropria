@@ -19,9 +19,16 @@ import { toast } from '@/hooks/use-toast';
 interface UpsertFormProps {
   userId: string;
   folderPath?: string;
+  uploadedFile?: {id: string, name: string, path: string} | null;
+  initialMetadata?: UpsertMetadata;
 }
 
-export function UpsertForm({ userId, folderPath }: UpsertFormProps) {
+export function UpsertForm({ 
+  userId, 
+  folderPath,
+  uploadedFile,
+  initialMetadata
+}: UpsertFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploading, setUploading] = useState<boolean>(false);
   const [processing, setProcessing] = useState<boolean>(false);
@@ -29,7 +36,7 @@ export function UpsertForm({ userId, folderPath }: UpsertFormProps) {
   const [selectedSavedFile, setSelectedSavedFile] = useState<string>('');
   
   // Metadados para o upsert
-  const [metadata, setMetadata] = useState<UpsertMetadata>({
+  const [metadata, setMetadata] = useState<UpsertMetadata>(initialMetadata || {
     tipo_documento: '',
     departamento: '',
     categoria: '',
@@ -56,6 +63,25 @@ export function UpsertForm({ userId, folderPath }: UpsertFormProps) {
       setSavedFiles(mockFiles);
     }
   }, [folderPath]);
+  
+  // Detectar quando um novo arquivo é carregado pelo componente pai
+  useEffect(() => {
+    if (uploadedFile) {
+      console.log("Arquivo carregado do UploadForm:", uploadedFile);
+      
+      // Adicionar à lista de arquivos se ainda não estiver
+      setSavedFiles(prev => {
+        const exists = prev.some(file => file.id === uploadedFile.id);
+        if (!exists) {
+          return [...prev, uploadedFile];
+        }
+        return prev;
+      });
+      
+      // Selecionar automaticamente o arquivo enviado
+      setSelectedSavedFile(uploadedFile.name);
+    }
+  }, [uploadedFile]);
   
   const handleMetadataChange = (field: keyof UpsertMetadata, value: string) => {
     setMetadata(prev => ({
@@ -196,11 +222,12 @@ export function UpsertForm({ userId, folderPath }: UpsertFormProps) {
       <h2 className="text-2xl font-bold">Upsert de Arquivo</h2>
       <p className="text-red-500">Depois que você enviou o arquivo é necessário fazer o upsert do arquivo</p>
       
+      {/* Formulário de upload adicional (opcional, caso queira fazer upload diretamente aqui) */}
       <Card>
         <CardHeader>
           <CardTitle>Enviar Arquivo</CardTitle>
           <CardDescription>
-            Primeiro faça o upload do arquivo que deseja processar
+            Se necessário, faça o upload de outro arquivo aqui
           </CardDescription>
         </CardHeader>
         <CardContent>
