@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { AppLayout } from '@/components/layout/AppLayout';
 import { UploadForm } from '@/components/files/UploadForm';
 import { FileList } from '@/components/files/FileList';

@@ -24,7 +24,7 @@ export function ChatInterface({
   onSendMessage, 
   isLoading = false,
   placeholder = "Digite sua pergunta...",
-  enableSearch = false // Default to false now
+  enableSearch = true
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -180,7 +180,6 @@ export function ChatInterface({
             disabled={isLoading}
             placeholder={placeholder}
           />
-          {/* Search web button removed */}
         </div>
       </CardContent>
     </Card>
