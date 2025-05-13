@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -80,12 +79,22 @@ const Index = () => {
   };
   
   // Função para lidar com envio de mensagens
-  const handleSendMessage = async (message: string) => {
+  const handleSendMessage = async (message: string, urls?: string[]) => {
     setIsLoading(true);
     
     try {
       // Processar a resposta da IA
-      const response = await aiService.sendMessage(message, messages);
+      let processedMessage = message;
+      
+      // Se houver URLs, adiciona as informações extraídas delas à mensagem
+      if (urls && urls.length > 0) {
+        processedMessage += "\n\nInformações extraídas dos links:";
+        urls.forEach(url => {
+          processedMessage += `\nLink: ${url}\nTítulo: Título simulado para ${url}\nConteúdo simulado do link...`;
+        });
+      }
+      
+      const response = await aiService.sendMessage(processedMessage, messages);
       
       // Atualizar a lista de mensagens
       setMessages(prevMessages => [
@@ -186,6 +195,7 @@ const Index = () => {
                 onSendMessage={handleSendMessage}
                 isLoading={isLoading}
                 placeholder="Digite sua pergunta..."
+                enableSearch={true}
               />
             </div>
           </div>
@@ -202,6 +212,7 @@ const Index = () => {
                 onSendMessage={handleSendMessage}
                 isLoading={isLoading}
                 placeholder="Digite sua pergunta..."
+                enableSearch={true}
               />
             </div>
           </div>

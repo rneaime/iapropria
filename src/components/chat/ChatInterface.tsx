@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send, Search } from 'lucide-react';
 import { CodeBlock } from "@/components/ui/code-block";
+import { ChatInput } from "@/components/chat/ChatInput";
 
 interface Message {
   content: string;
@@ -14,7 +15,7 @@ interface Message {
 interface ChatInterfaceProps {
   title: string;
   initialMessages?: Message[];
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, urls?: string[]) => void;
   isLoading?: boolean;
   placeholder?: string;
   enableSearch?: boolean;
@@ -29,7 +30,6 @@ export function ChatInterface({
   enableSearch = true
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [inputMessage, setInputMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Update component messages when initialMessages change
@@ -42,31 +42,19 @@ export function ChatInterface({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
   
-  const handleSendMessage = () => {
-    if (!inputMessage.trim()) return;
+  const handleSendMessage = (message: string, urls?: string[]) => {
+    if (!message.trim()) return;
     
     // Add user message
     const userMessage: Message = {
-      content: inputMessage,
+      content: message,
       sender: 'user'
     };
     
     setMessages(prev => [...prev, userMessage]);
     
     // Call the parent handler
-    onSendMessage(inputMessage);
-    setInputMessage('');
-  };
-  
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  const handleSearch = () => {
-    window.open(`https://www.google.com/search?q=${encodeURIComponent(inputMessage)}`, '_blank');
+    onSendMessage(message, urls);
   };
 
   // Format message content to handle code blocks
@@ -193,32 +181,24 @@ export function ChatInterface({
         </div>
         
         <div className="p-4 border-t border-gray-200 bg-white">
-          <div className="flex space-x-2">
-            <Input
-              value={inputMessage}
-              onChange={(e) => setInputMessage(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder={placeholder}
-              className="flex-1"
-            />
-            {enableSearch && inputMessage.trim() && (
-              <Button
-                onClick={handleSearch}
-                variant="outline"
-                size="icon"
-                title="Pesquisar na web"
+          <ChatInput
+            onSendMessage={handleSendMessage}
+            disabled={isLoading}
+            placeholder={placeholder}
+          />
+          {enableSearch && (
+            <div className="mt-2 text-xs text-right">
+              <Button 
+                variant="link" 
+                size="sm" 
+                className="p-0 h-auto" 
+                onClick={() => window.open(`https://www.google.com/search?q=${encodeURIComponent(messages[messages.length - 1]?.content || '')}`, '_blank')}
               >
-                <Search className="h-4 w-4" />
+                <Search className="h-3 w-3 mr-1" />
+                Pesquisar na web
               </Button>
-            )}
-            <Button 
-              onClick={handleSendMessage} 
-              disabled={isLoading || !inputMessage.trim()} 
-              size="icon"
-            >
-              <Send className="h-4 w-4" />
-            </Button>
-          </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -13,7 +13,7 @@ export function HelpChat() {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
   
-  const handleSendMessage = async (message: string) => {
+  const handleSendMessage = async (message: string, urls?: string[]) => {
     // Add user message to the list
     const userMessage = {
       content: message,
@@ -29,8 +29,18 @@ export function HelpChat() {
       // Por enquanto, vamos simular uma resposta após um delay
       
       setTimeout(() => {
+        let processedMessage = message;
+        
+        // Se houver URLs, adiciona as informações simuladas delas à mensagem
+        if (urls && urls.length > 0) {
+          processedMessage += "\n\nInformações extraídas dos links:";
+          urls.forEach(url => {
+            processedMessage += `\nLink: ${url}\nTítulo: Título simulado para ${url}\nConteúdo simulado do link...`;
+          });
+        }
+        
         const assistantMessage = {
-          content: generateResponse(message),
+          content: generateResponse(processedMessage),
           sender: 'assistant' as const
         };
         
