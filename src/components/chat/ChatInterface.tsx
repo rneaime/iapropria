@@ -67,8 +67,8 @@ export function ChatInterface({
       <CardHeader className="bg-burgundy text-white rounded-t-md p-4">
         <CardTitle>{title}</CardTitle>
       </CardHeader>
-      <CardContent className="p-0 flex flex-col h-[calc(100%-76px)]">
-        <div className="flex-1 overflow-y-auto max-h-[calc(100vh-250px)]">
+      <CardContent className="p-0 flex flex-col h-[calc(100%-76px)] overflow-hidden">
+        <div className="flex-1 overflow-y-auto">
           <div className="p-4">
             {messages.map((message, index) => (
               <div 

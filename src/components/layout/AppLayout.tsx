@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -52,7 +51,7 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
       <div className="bg-burgundy text-white">
         <div className="container mx-auto px-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="w-full justify-start overflow-x-auto py-0 bg-burgundy">
+            <TabsList className="w-full justify-start bg-burgundy flex">
               <TabsTrigger value="atendimento" className="py-3 text-white data-[state=active]:bg-burgundy-light data-[state=active]:text-white/90">
                 <MessageSquare className="h-4 w-4 mr-2" />
                 Atendimento IA
