@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { BadgeCheck, CheckCircle } from "lucide-react";
+import { BadgeCheck, CheckCircle, AlertCircle } from "lucide-react";
 import { configService } from "@/services/configService";
 
 interface ApiKey {
@@ -16,7 +16,7 @@ interface ApiKey {
   key: string;
   secret?: string;
   url?: string;
-  status: 'connected' | 'disconnected';
+  status: 'connected' | 'disconnected' | 'error';
   type: 'api' | 'database';
 }
 
@@ -30,6 +30,7 @@ export function ApiKeyManager() {
   const [apiType, setApiType] = useState<'api' | 'database'>('api');
   const [isEditing, setIsEditing] = useState<boolean>(false);
   const [isConnecting, setIsConnecting] = useState<boolean>(false);
+  const [isTesting, setIsTesting] = useState<boolean>(false);
 
   // Carregar chaves salvas ao iniciar
   useEffect(() => {
@@ -124,6 +125,59 @@ export function ApiKeyManager() {
     setApiType('api');
     setIsEditing(false);
     setSelectedApi('');
+  };
+
+  const testGroqApi = async () => {
+    setIsTesting(true);
+    
+    try {
+      // Testar se a chave da API Groq é válida
+      const response = await fetch('https://api.groq.com/openai/v1/models', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (response.ok && data?.data) {
+        toast({
+          title: "Teste bem-sucedido",
+          description: "A conexão com a API Groq está funcionando corretamente.",
+        });
+        
+        // Atualizar status na lista local se estiver editando
+        if (isEditing) {
+          setApiKeys(prevKeys => prevKeys.map(key => 
+            key.id === selectedApi ? { ...key, status: 'connected' } : key
+          ));
+        }
+      } else {
+        toast({
+          variant: "destructive",
+          title: "Teste falhou",
+          description: data.error?.message || "A chave da API Groq parece ser inválida.",
+        });
+        
+        // Atualizar status na lista local se estiver editando
+        if (isEditing) {
+          setApiKeys(prevKeys => prevKeys.map(key => 
+            key.id === selectedApi ? { ...key, status: 'error' } : key
+          ));
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao testar a API do Groq:", error);
+      toast({
+        variant: "destructive",
+        title: "Erro na conexão",
+        description: "Não foi possível conectar ao serviço Groq. Verifique sua conexão de internet.",
+      });
+    } finally {
+      setIsTesting(false);
+    }
   };
 
   const handleSave = () => {
@@ -287,15 +341,28 @@ export function ApiKeyManager() {
                 {apiKeys.map(api => (
                   <div key={api.id} className="flex items-center justify-between p-3 border rounded-md bg-background">
                     <div className="flex items-center space-x-3">
-                      <div className={`p-1.5 rounded-full ${api.status === 'connected' ? 'bg-green-100' : 'bg-amber-100'}`}>
-                        <CheckCircle className={`h-4 w-4 ${api.status === 'connected' ? 'text-green-600' : 'text-amber-600'}`} />
+                      <div className={`p-1.5 rounded-full ${
+                        api.status === 'connected' ? 'bg-green-100' : 
+                        api.status === 'error' ? 'bg-red-100' : 'bg-amber-100'
+                      }`}>
+                        {api.status === 'connected' ? (
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        ) : api.status === 'error' ? (
+                          <AlertCircle className="h-4 w-4 text-red-600" />
+                        ) : (
+                          <CheckCircle className="h-4 w-4 text-amber-600" />
+                        )}
                       </div>
                       <div>
                         <p className="font-medium text-sm">{api.name}</p>
                         <p className="text-xs text-muted-foreground">
                           {api.type === 'api' ? 'API Key' : 'Banco de dados'} • 
-                          <span className={api.status === 'connected' ? 'text-green-600' : 'text-amber-600'}>
-                            {' '}{api.status === 'connected' ? 'Conectado' : 'Desconectado'}
+                          <span className={
+                            api.status === 'connected' ? 'text-green-600' : 
+                            api.status === 'error' ? 'text-red-600' : 'text-amber-600'
+                          }>
+                            {' '}{api.status === 'connected' ? 'Conectado' : 
+                                  api.status === 'error' ? 'Erro' : 'Desconectado'}
                           </span>
                         </p>
                       </div>
@@ -389,6 +456,16 @@ export function ApiKeyManager() {
               </div>
               
               <div className="flex justify-end space-x-2 pt-2">
+                {apiType === 'api' && apiName.toLowerCase().includes('groq') && (
+                  <Button
+                    variant="outline"
+                    onClick={testGroqApi}
+                    disabled={isTesting || !apiKey}
+                  >
+                    {isTesting ? "Testando..." : "Testar conexão"}
+                  </Button>
+                )}
+                
                 {isEditing && (
                   <Button
                     variant="outline"
@@ -412,7 +489,9 @@ export function ApiKeyManager() {
             <AlertTitle>Status da conexão</AlertTitle>
             <AlertDescription>
               {apiKeys.length > 0 
-                ? "Todas as conexões estão ativas e funcionando normalmente." 
+                ? apiKeys.some(key => key.status === 'error')
+                  ? "Algumas conexões apresentam erro. Verifique as chaves e tente novamente."
+                  : "Todas as conexões estão ativas e funcionando normalmente." 
                 : "Nenhuma conexão configurada. Adicione suas chaves de API para começar."}
             </AlertDescription>
           </Alert>

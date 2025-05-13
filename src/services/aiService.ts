@@ -1,6 +1,5 @@
-
 import { AI_MODELS } from '../config/env';
-import { toast } from '../components/ui/use-toast';
+import { toast } from '../hooks/use-toast';
 import { configService } from './configService';
 
 interface Message {
@@ -40,6 +39,7 @@ export const aiService = {
       };
 
       // Fazer a chamada para a API do Groq
+      console.log("Enviando requisição para a API Groq com a chave:", groqApiKey.substring(0, 5) + "...");
       const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -52,7 +52,15 @@ export const aiService = {
       if (!response.ok) {
         const errorData = await response.json();
         console.error('Erro na resposta do Groq:', errorData);
-        throw new Error(`Erro na API do Groq: ${response.status} ${response.statusText}`);
+        
+        if (errorData.error?.type === 'invalid_request_error' || 
+            errorData.error?.message?.includes('API key')) {
+          throw new Error(`Erro na API do Groq: Chave de API inválida. Por favor, verifique sua chave em Parâmetros > API.`);
+        } else if (errorData.error?.type === 'authentication_error') {
+          throw new Error(`Erro de autenticação na API do Groq. Por favor, verifique sua chave em Parâmetros > API.`);
+        } else {
+          throw new Error(`Erro na API do Groq: ${errorData.error?.message || response.statusText}`);
+        }
       }
 
       const data = await response.json();
@@ -64,7 +72,7 @@ export const aiService = {
         description: error instanceof Error ? error.message : "Não foi possível processar sua mensagem. Tente novamente.",
         variant: "destructive"
       });
-      return "Erro ao processar mensagem. Por favor, verifique sua chave de API e tente novamente.";
+      return "Erro ao processar mensagem. Por favor, verifique sua chave de API na seção Parâmetros > API e tente novamente.";
     }
   },
   
@@ -141,5 +149,23 @@ export const aiService = {
   
   getModeloPreferido: (userId: string): string => {
     return localStorage.getItem(`modelo_preferido_${userId}`) || AI_MODELS[0];
+  },
+  
+  validarGroqApiKey: async (apiKey: string): Promise<boolean> => {
+    try {
+      const response = await fetch('https://api.groq.com/openai/v1/models', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await response.json();
+      return response.ok && Array.isArray(data.data);
+    } catch (error) {
+      console.error("Erro ao validar chave da API Groq:", error);
+      return false;
+    }
   }
 };
