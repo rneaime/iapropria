@@ -118,12 +118,14 @@ export function AppSidebar({
                 key={item.value}
                 variant="ghost"
                 className={`justify-start px-4 py-3 w-full ${
-                  activeTab === item.value ? "bg-burgundy text-white" : "text-white hover:bg-burgundy-dark"
+                  activeTab === item.value 
+                    ? "bg-burgundy text-gray-100" 
+                    : "text-white hover:bg-burgundy-dark"
                 }`}
                 onClick={() => handleMenuItemClick(item.value)}
               >
-                <item.icon className="h-4 w-4 mr-2" />
-                <span>{item.title}</span>
+                <item.icon className={`h-4 w-4 mr-2 ${activeTab === item.value ? "text-gray-100" : ""}`} />
+                <span className={activeTab === item.value ? "text-gray-100" : ""}>{item.title}</span>
               </Button>
             ))}
           </nav>
@@ -164,12 +166,12 @@ export function AppSidebar({
             <SidebarMenuButton
               isActive={activeTab === item.value}
               className={`w-full justify-start ${
-                activeTab === item.value ? "bg-burgundy text-white" : "text-white hover:bg-burgundy-dark"
+                activeTab === item.value ? "bg-burgundy text-gray-100" : "text-white hover:bg-burgundy-dark"
               }`}
               onClick={() => handleMenuItemClick(item.value)}
             >
-              <item.icon className="h-4 w-4 mr-2" />
-              <span>{item.title}</span>
+              <item.icon className={`h-4 w-4 mr-2 ${activeTab === item.value ? "text-gray-100" : ""}`} />
+              <span className={activeTab === item.value ? "text-gray-100" : ""}>{item.title}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         ))}
