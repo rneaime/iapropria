@@ -138,5 +138,11 @@ export const upsertService = {
       'text/plain': '.txt',
       'text/x-python': '.py'
     };
+  },
+  
+  createUserFolder: (userId: string): string => {
+    // In a real application, this would create a folder on the server
+    // Here we just return the folder path
+    return `/home/iapropria/${userId}`;
   }
 };

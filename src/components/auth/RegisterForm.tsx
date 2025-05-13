@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { authService } from "@/services/authService";
 
 interface RegisterFormProps {
@@ -67,7 +67,7 @@ export const RegisterForm: React.FC<RegisterFormProps> = ({ onRegister, onCancel
       if (result) {
         toast({
           title: "Cadastro realizado",
-          description: "Sua conta foi criada com sucesso!"
+          description: "Sua conta foi criada com sucesso! Seu diretório de arquivos foi configurado como /home/iapropria/1"
         });
         onRegister();
       } else {

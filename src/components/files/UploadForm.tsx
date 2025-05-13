@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/hooks/use-toast";
@@ -28,44 +28,17 @@ interface UploadFormProps {
 }
 
 export function UploadForm({ userId = "1" }: UploadFormProps) {
-  const [folderPath, setFolderPath] = useState<string>("");
+  // Fixed folder path
+  const folderPath = `/home/iapropria/${userId}`;
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState<boolean>(false);
   const [uploadedFile, setUploadedFile] = useState<{id: string, name: string, path: string} | null>(null);
-  
-  const handleFolderSave = () => {
-    if (!folderPath.trim()) {
-      toast({
-        title: "Caminho vazio",
-        description: "Por favor, informe um caminho de pasta válido",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    // Em um aplicativo real, isso chamaria uma API
-    console.log("Salvando caminho da pasta:", folderPath);
-    
-    toast({
-      title: "Pasta configurada",
-      description: `Caminho da pasta salvo: ${folderPath}`,
-    });
-  };
   
   const handleFileUpload = () => {
     if (!selectedFile) {
       toast({
         title: "Nenhum arquivo selecionado",
         description: "Selecione um arquivo para upload",
-        variant: "destructive"
-      });
-      return;
-    }
-    
-    if (!folderPath) {
-      toast({
-        title: "Caminho não definido",
-        description: "Configure o caminho da pasta primeiro",
         variant: "destructive"
       });
       return;
@@ -125,31 +98,29 @@ export function UploadForm({ userId = "1" }: UploadFormProps) {
       
       <Accordion type="single" collapsible className="w-full" defaultValue="folder-config">
         <AccordionItem value="folder-config">
-          <AccordionTrigger>Configuração da Pasta</AccordionTrigger>
+          <AccordionTrigger>Informações da Pasta</AccordionTrigger>
           <AccordionContent>
             <Card>
               <CardHeader>
-                <CardTitle>Configuração da Pasta</CardTitle>
+                <CardTitle>Pasta de Armazenamento</CardTitle>
                 <CardDescription>
-                  Defina o caminho da pasta antes de fazer upload de arquivos
+                  Seus arquivos serão armazenados neste local
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="flex items-end space-x-2">
                   <div className="flex-1">
                     <Input
-                      placeholder="Caminho da pasta (ex: /dados/arquivos)"
+                      placeholder="Caminho da pasta"
                       value={folderPath}
-                      onChange={(e) => setFolderPath(e.target.value)}
+                      disabled
+                      className="bg-gray-50"
                     />
                   </div>
-                  <Button onClick={handleFolderSave}>Salvar pasta</Button>
                 </div>
               </CardContent>
               <CardFooter>
-                {folderPath && (
-                  <FileList folderPath={folderPath} />
-                )}
+                <FileList folderPath={folderPath} />
               </CardFooter>
             </Card>
           </AccordionContent>
@@ -195,7 +166,7 @@ export function UploadForm({ userId = "1" }: UploadFormProps) {
               <CardFooter>
                 <Button 
                   onClick={handleFileUpload} 
-                  disabled={!selectedFile || !folderPath || isUploading}
+                  disabled={!selectedFile || isUploading}
                 >
                   {isUploading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   {isUploading ? "Enviando..." : "Enviar Arquivo"}
