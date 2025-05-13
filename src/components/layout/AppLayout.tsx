@@ -1,7 +1,7 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { User, LogOut, Menu, PanelLeft } from 'lucide-react';
+import { User, LogOut, PanelLeft } from 'lucide-react';
 import { aiService } from '@/services/aiService';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -37,6 +37,11 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
       }
     }
   }, [user]);
+
+  // Effect to scroll to top when activeTab changes
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [activeTab]);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);

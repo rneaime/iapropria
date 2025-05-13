@@ -84,13 +84,20 @@ export function AppSidebar({
     if (isMobile) {
       setIsMenuOpen(false);
     }
+    // Scroll to top when changing tabs
+    window.scrollTo(0, 0);
   };
 
   // Versão mobile com Sheet
   if (isMobileSidebar) {
     return (
       <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-        <SheetContent side="left" className="bg-burgundy-light text-white p-0 w-52 z-50 pt-16">
+        <SheetContent side="left" className="bg-burgundy-light text-white p-0 w-52 z-50">
+          {/* Logo space */}
+          <div className="h-16 flex items-center justify-center border-b border-burgundy-dark mb-2">
+            <span className="font-bold text-xl">IAprópria</span>
+          </div>
+          
           <nav className="flex flex-col">
             {menuItems.map((item) => (
               <Button
@@ -113,7 +120,12 @@ export function AppSidebar({
 
   // Versão desktop - menu vertical à esquerda
   return (
-    <div className="flex flex-col bg-burgundy-light text-white relative">
+    <div className="flex flex-col bg-burgundy-light text-white relative h-full">
+      {/* Logo space */}
+      <div className="h-16 flex items-center justify-center border-b border-burgundy-dark mb-2">
+        <span className="font-bold text-xl">IAprópria</span>
+      </div>
+      
       {/* Close button */}
       {onClose && (
         <Button 
