@@ -69,7 +69,7 @@ export function AppSidebar({ activeTab, setActiveTab }: AppSidebarProps) {
   ];
 
   return (
-    <Sidebar>
+    <Sidebar className="border-r border-burgundy-light">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>

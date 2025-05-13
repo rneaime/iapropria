@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import {
@@ -44,18 +45,24 @@ const Index = () => {
   
   // Verificar autenticação ao carregar a página
   useEffect(() => {
+    console.log("Verificando autenticação...");
     const currentUser = authService.getUsuarioAtual();
     if (currentUser) {
+      console.log("Usuário autenticado:", currentUser);
       setIsAuthenticated(true);
       setUser(currentUser);
       setUserId(String(currentUser.id));
+    } else {
+      console.log("Nenhum usuário autenticado.");
     }
   }, []);
   
   // Funções de autenticação
   const handleLogin = () => {
+    console.log("handleLogin chamado");
     const currentUser = authService.getUsuarioAtual();
     if (currentUser) {
+      console.log("Usuário logado:", currentUser);
       setIsAuthenticated(true);
       setUser(currentUser);
       setUserId(String(currentUser.id));
@@ -63,6 +70,7 @@ const Index = () => {
   };
   
   const handleLogout = (saveChatHistory: boolean = true) => {
+    console.log("handleLogout chamado, salvando histórico:", saveChatHistory);
     if (saveChatHistory && messages.length > 0) {
       // Em uma aplicação real, aqui salvaríamos o histórico da conversa
       toast({
@@ -101,6 +109,7 @@ const Index = () => {
         { pergunta: message, resposta: response }
       ]);
     } catch (error) {
+      console.error("Erro ao processar mensagem:", error);
       setMessages(prevMessages => [
         ...prevMessages, 
         { 
@@ -152,6 +161,8 @@ const Index = () => {
     );
   }
 
+  console.log("Renderizando app após autenticação");
+
   // Converter mensagens para o formato padrão para o ChatInterface
   const standardMessages = messages.flatMap(msg => [
     { content: msg.pergunta, sender: 'user' as const },
@@ -159,10 +170,9 @@ const Index = () => {
   ]);
 
   // Adicionar mensagem inicial de boas-vindas se não houver mensagens
-  const initialMessages = [
-    { content: "Olá! Sou o assistente da IAprópria. Como posso ajudá-lo hoje?", sender: 'assistant' as const },
-    ...standardMessages
-  ];
+  const initialMessages = standardMessages.length === 0 
+    ? [{ content: "Olá! Sou o assistente da IAprópria. Como posso ajudá-lo hoje?", sender: 'assistant' as const }]
+    : standardMessages;
 
   // Se autenticado, mostrar a aplicação principal
   return (
@@ -175,17 +185,6 @@ const Index = () => {
       <div className="h-full">
         {activeTab === "atendimento" && (
           <div className="space-y-4 h-full">
-            <div className="flex justify-end mb-4">
-              <div className="flex space-x-2">
-                <Button variant="outline" onClick={() => handleLogout(true)}>
-                  Sair e Salvar Conversa
-                </Button>
-                <Button variant="outline" onClick={() => handleLogout(false)}>
-                  Sair sem Salvar Conversa
-                </Button>
-              </div>
-            </div>
-            
             <div className="h-[calc(100vh-200px)]">
               <ChatInterface
                 initialMessages={initialMessages}

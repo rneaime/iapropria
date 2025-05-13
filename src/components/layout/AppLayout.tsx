@@ -59,7 +59,7 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
         <SidebarProvider defaultOpen={true}>
           <div className="flex w-full">
             <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-            <SidebarInset>
+            <SidebarInset className="flex flex-col flex-1">
               <main className="flex-1 p-6">{children}</main>
               <footer className="bg-burgundy text-white py-4">
                 <div className="container mx-auto px-4 text-center text-sm">
