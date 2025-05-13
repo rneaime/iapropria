@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Send } from 'lucide-react';
+import { CodeBlock } from "@/components/ui/code-block";
 
 interface Message {
   content: string;
@@ -61,6 +62,50 @@ export function ChatInterface({
       handleSendMessage();
     }
   };
+
+  // Format message content to handle code blocks
+  const formatMessageContent = (content: string) => {
+    // Regex for code blocks
+    const codeBlockRegex = /```([\w\-+#]+)?\n([\s\S]*?)```/g;
+    
+    const parts: JSX.Element[] = [];
+    let lastIndex = 0;
+    let match;
+    let key = 0;
+    
+    // Find all code blocks in the message
+    while ((match = codeBlockRegex.exec(content)) !== null) {
+      // Add text before code block
+      if (match.index > lastIndex) {
+        parts.push(
+          <span key={key++} className="whitespace-pre-wrap">
+            {content.substring(lastIndex, match.index)}
+          </span>
+        );
+      }
+      
+      // Add code block with syntax highlighting
+      const language = match[1]?.trim() || 'typescript';
+      const code = match[2].trim();
+      
+      parts.push(
+        <CodeBlock key={key++} code={code} language={language} />
+      );
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    // Add remaining text after last code block
+    if (lastIndex < content.length) {
+      parts.push(
+        <span key={key++} className="whitespace-pre-wrap">
+          {content.substring(lastIndex)}
+        </span>
+      );
+    }
+    
+    return parts.length > 0 ? parts : <span className="whitespace-pre-wrap">{content}</span>;
+  };
   
   return (
     <Card className="w-full h-full flex flex-col">
@@ -84,7 +129,7 @@ export function ChatInterface({
                       : 'bg-gray-100 text-gray-800 rounded-bl-none'
                   }`}
                 >
-                  {message.content}
+                  {formatMessageContent(message.content)}
                 </div>
                 <div className="text-xs text-gray-500 mt-1">
                   {message.sender === 'user' ? 'Você' : 'Assistente'}

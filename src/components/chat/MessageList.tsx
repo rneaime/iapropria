@@ -16,8 +16,11 @@ export const MessageList: React.FC<MessageListProps> = ({ messages }) => {
   const formatMessage = (text: string) => {
     if (!text) return [];
     
-    // Regex para encontrar blocos de código (texto com múltiplas linhas de código)
-    const codeBlockRegex = /```(?:(\w+)\n)?([\s\S]*?)```/g;
+    // Regex para encontrar blocos de código com linguagem especificada
+    const codeBlockRegex = /```([\w\-+#]+)?\n([\s\S]*?)```/g;
+    
+    // Regex para encontrar blocos de código em linha (com backticks)
+    const inlineCodeRegex = /`([^`]+)`/g;
     
     // Dividir a mensagem em partes (texto e blocos de código)
     let lastIndex = 0;
@@ -27,14 +30,16 @@ export const MessageList: React.FC<MessageListProps> = ({ messages }) => {
     while ((match = codeBlockRegex.exec(text)) !== null) {
       // Adicionar texto antes do bloco de código
       if (match.index > lastIndex) {
+        const textBeforeCode = text.substring(lastIndex, match.index);
+        // Process inline code in text before code block
         parts.push({
           type: 'text',
-          content: text.substring(lastIndex, match.index)
+          content: processInlineCode(textBeforeCode)
         });
       }
       
       // Adicionar o bloco de código
-      const language = match[1] || 'typescript';
+      const language = match[1]?.trim() || 'typescript';
       const code = match[2].trim();
       
       parts.push({
@@ -48,14 +53,46 @@ export const MessageList: React.FC<MessageListProps> = ({ messages }) => {
     
     // Adicionar texto restante
     if (lastIndex < text.length) {
+      const remainingText = text.substring(lastIndex);
       parts.push({
         type: 'text',
-        content: text.substring(lastIndex)
+        content: processInlineCode(remainingText)
       });
     }
     
-    // Se não encontrou blocos de código, retorna o texto original
-    return parts.length > 0 ? parts : [{ type: 'text', content: text }];
+    // Se não encontrou blocos de código, processa o texto para inline code
+    return parts.length > 0 ? parts : [{ type: 'text', content: processInlineCode(text) }];
+  };
+
+  // Process inline code with backticks
+  const processInlineCode = (text: string) => {
+    if (!text) return text;
+    
+    const parts: JSX.Element[] = [];
+    const inlineCodeRegex = /`([^`]+)`/g;
+    let lastIndex = 0;
+    let match;
+    let key = 0;
+    
+    while ((match = inlineCodeRegex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(<span key={key++}>{text.substring(lastIndex, match.index)}</span>);
+      }
+      
+      parts.push(
+        <code key={key++} className="px-1.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 font-mono text-sm">
+          {match[1]}
+        </code>
+      );
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    if (lastIndex < text.length) {
+      parts.push(<span key={key++}>{text.substring(lastIndex)}</span>);
+    }
+    
+    return parts.length > 0 ? <>{parts}</> : text;
   };
 
   return (
@@ -71,7 +108,7 @@ export const MessageList: React.FC<MessageListProps> = ({ messages }) => {
               if (part.type === 'code') {
                 return <CodeBlock key={i} code={part.content} language={part.language} />;
               } else {
-                return <p key={i}>{part.content}</p>;
+                return <div key={i}>{part.content}</div>;
               }
             })}
           </div>
