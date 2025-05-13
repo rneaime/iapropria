@@ -18,6 +18,13 @@ export const DB_CONFIG = {
   PORT: "5432",
 };
 
+// Exportações adicionais para compatibilidade com os arquivos de banco de dados
+export const DB_HOST = DB_CONFIG.HOST;
+export const DB_PORT = parseInt(DB_CONFIG.PORT);
+export const DB_USER = DB_CONFIG.USER;
+export const DB_PASSWORD = DB_CONFIG.PASSWORD;
+export const DB_NAME = DB_CONFIG.NAME;
+
 export const AI_MODELS = [
   "meta-llama/llama-4-scout-17b-16e-instruct",
   "llama-3.3-70b-versatile",

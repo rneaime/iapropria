@@ -1,5 +1,5 @@
 
-// Este é um arquivo de redirecionamento para compatibilidade
+// Este arquivo re-exporta do componente UI para compatibilidade
 import { useToast, toast } from "@/components/ui/use-toast";
 
 export { useToast, toast };
