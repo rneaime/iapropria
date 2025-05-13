@@ -19,9 +19,6 @@ export const MessageList: React.FC<MessageListProps> = ({ messages }) => {
     // Regex para encontrar blocos de código com linguagem especificada
     const codeBlockRegex = /```([\w\-+#]+)?\n([\s\S]*?)```/g;
     
-    // Regex para encontrar blocos de código em linha (com backticks)
-    const inlineCodeRegex = /`([^`]+)`/g;
-    
     // Dividir a mensagem em partes (texto e blocos de código)
     let lastIndex = 0;
     const parts = [];
@@ -39,7 +36,7 @@ export const MessageList: React.FC<MessageListProps> = ({ messages }) => {
       }
       
       // Adicionar o bloco de código
-      const language = match[1]?.trim() || 'typescript';
+      const language = match[1]?.trim() || 'text';
       const code = match[2].trim();
       
       parts.push({

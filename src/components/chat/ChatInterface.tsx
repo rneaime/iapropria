@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send } from 'lucide-react';
+import { Send, Search } from 'lucide-react';
 import { CodeBlock } from "@/components/ui/code-block";
 
 interface Message {
@@ -17,6 +17,7 @@ interface ChatInterfaceProps {
   onSendMessage: (message: string) => void;
   isLoading?: boolean;
   placeholder?: string;
+  enableSearch?: boolean;
 }
 
 export function ChatInterface({ 
@@ -24,7 +25,8 @@ export function ChatInterface({
   initialMessages = [], 
   onSendMessage, 
   isLoading = false,
-  placeholder = "Digite sua pergunta..." 
+  placeholder = "Digite sua pergunta...",
+  enableSearch = true
 }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [inputMessage, setInputMessage] = useState('');
@@ -63,10 +65,17 @@ export function ChatInterface({
     }
   };
 
+  const handleSearch = () => {
+    window.open(`https://www.google.com/search?q=${encodeURIComponent(inputMessage)}`, '_blank');
+  };
+
   // Format message content to handle code blocks
   const formatMessageContent = (content: string) => {
-    // Regex for code blocks
+    // Regex for code blocks with language specification
     const codeBlockRegex = /```([\w\-+#]+)?\n([\s\S]*?)```/g;
+    
+    // Regex for inline code
+    const inlineCodeRegex = /`([^`]+)`/g;
     
     const parts: JSX.Element[] = [];
     let lastIndex = 0;
@@ -77,15 +86,17 @@ export function ChatInterface({
     while ((match = codeBlockRegex.exec(content)) !== null) {
       // Add text before code block
       if (match.index > lastIndex) {
+        const textBeforeCode = content.substring(lastIndex, match.index);
+        // Process inline code in text before block
         parts.push(
           <span key={key++} className="whitespace-pre-wrap">
-            {content.substring(lastIndex, match.index)}
+            {processInlineCode(textBeforeCode)}
           </span>
         );
       }
       
       // Add code block with syntax highlighting
-      const language = match[1]?.trim() || 'typescript';
+      const language = match[1]?.trim() || 'text';
       const code = match[2].trim();
       
       parts.push(
@@ -97,14 +108,46 @@ export function ChatInterface({
     
     // Add remaining text after last code block
     if (lastIndex < content.length) {
+      const remainingText = content.substring(lastIndex);
       parts.push(
         <span key={key++} className="whitespace-pre-wrap">
-          {content.substring(lastIndex)}
+          {processInlineCode(remainingText)}
         </span>
       );
     }
     
-    return parts.length > 0 ? parts : <span className="whitespace-pre-wrap">{content}</span>;
+    return parts.length > 0 ? parts : <span className="whitespace-pre-wrap">{processInlineCode(content)}</span>;
+  };
+
+  // Process inline code with backticks
+  const processInlineCode = (text: string) => {
+    if (!text) return text;
+    
+    const parts: JSX.Element[] = [];
+    const inlineCodeRegex = /`([^`]+)`/g;
+    let lastIndex = 0;
+    let match;
+    let key = 0;
+    
+    while ((match = inlineCodeRegex.exec(text)) !== null) {
+      if (match.index > lastIndex) {
+        parts.push(<span key={key++}>{text.substring(lastIndex, match.index)}</span>);
+      }
+      
+      parts.push(
+        <code key={key++} className="px-1.5 py-0.5 rounded-md bg-slate-200 dark:bg-slate-800 font-mono text-sm">
+          {match[1]}
+        </code>
+      );
+      
+      lastIndex = match.index + match[0].length;
+    }
+    
+    if (lastIndex < text.length) {
+      parts.push(<span key={key++}>{text.substring(lastIndex)}</span>);
+    }
+    
+    return parts.length > 0 ? <>{parts}</> : text;
   };
   
   return (
@@ -158,6 +201,16 @@ export function ChatInterface({
               placeholder={placeholder}
               className="flex-1"
             />
+            {enableSearch && inputMessage.trim() && (
+              <Button
+                onClick={handleSearch}
+                variant="outline"
+                size="icon"
+                title="Pesquisar na web"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+            )}
             <Button 
               onClick={handleSendMessage} 
               disabled={isLoading || !inputMessage.trim()} 

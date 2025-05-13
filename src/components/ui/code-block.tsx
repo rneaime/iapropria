@@ -50,6 +50,12 @@ export function CodeBlock({ code, language = 'typescript', className }: CodeBloc
     }
   };
 
+  // Function to format the code with proper indentation
+  const formatCode = (code: string) => {
+    // Return the code as is, syntax highlighting will be applied via CSS
+    return code;
+  };
+
   return (
     <div className={cn("relative my-4 rounded-md bg-slate-950 text-slate-50", className)}>
       <div className="flex items-center justify-between px-4 py-1.5 border-b border-slate-800">
@@ -78,7 +84,7 @@ export function CodeBlock({ code, language = 'typescript', className }: CodeBloc
       </div>
       <pre className="overflow-x-auto p-4 text-sm">
         <code className={getLanguageClass(language)}>
-          {code}
+          {formatCode(code)}
         </code>
       </pre>
     </div>
