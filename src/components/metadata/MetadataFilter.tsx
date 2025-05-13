@@ -11,7 +11,6 @@ import { toast } from "@/hooks/use-toast";
 import { pineconeService } from "@/services/pineconeService";
 import { Trash, Save, CheckSquare, Filter, RefreshCw, Database } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AspectRatio } from "@/components/ui/aspect-ratio";
 
 interface MetadataFilterProps {
   userId: string;
@@ -26,7 +25,6 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
   const [deleting, setDeleting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [expandedAccordions, setExpandedAccordions] = useState<string[]>([]);
-  const [connectionAttempts, setConnectionAttempts] = useState(0);
   
   // Colunas para filtrar
   const filterColumns = [
@@ -38,13 +36,12 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
     try {
       if (isRefresh) {
         setRefreshing(true);
-        setConnectionAttempts(prev => prev + 1);
       } else {
         setLoading(true);
       }
       
       // Forçar a usar o namespace "1"
-      console.log(`Buscando documentos do Pinecone com namespace: 1 (tentativa ${connectionAttempts + 1})`);
+      console.log("Buscando documentos do Pinecone com namespace: 1");
       
       const docs = await pineconeService.buscarDocumentos("1");
       console.log("Documentos recebidos:", docs);
@@ -87,6 +84,7 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
     }
   };
   
+  // Carregar dados ao iniciar
   useEffect(() => {
     fetchData();
   }, [userId]);

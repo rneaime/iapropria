@@ -1,4 +1,3 @@
-
 import { INDEX_NAME } from '../config/env';
 import { configService } from './configService';
 import { toast } from '@/hooks/use-toast';
@@ -20,7 +19,7 @@ interface Metadado {
   [key: string]: any;
 }
 
-// Mock data for fallback purposes only
+// Mock data apenas para fallback caso a conexão real falhe
 const mockDocumentos: Metadado[] = [
   {
     id: "doc1",
@@ -70,196 +69,119 @@ const mockDocumentos: Metadado[] = [
 ];
 
 export const pineconeService = {
-  buscarDocumentos: async (userId: string, topK: number = 100): Promise<Metadado[]> => {
+  buscarDocumentos: async (userId: string, topK: number = 1000): Promise<Metadado[]> => {
     try {
-      console.log(`Tentando buscar documentos reais do Pinecone para namespace: 1`);
-      
-      // Sempre forçar o namespace para "1" conforme solicitado
+      // Forçar o namespace para "1" independentemente do userId recebido
       const namespace = "1";
+      console.log(`Buscando documentos reais do Pinecone para namespace: ${namespace}`);
       
-      // Obter a chave da API e o nome do índice
+      // Obter a chave da API do configService
       const apiKeys = configService.getApiKeys();
       const pineconeApiKey = apiKeys.PINECONE_API_KEY;
-      const indexName = INDEX_NAME;
+      const indexName = INDEX_NAME; // "iapropria2"
       
       if (!pineconeApiKey) {
-        toast({
-          title: "Erro",
-          description: "Chave da API Pinecone não encontrada. Configure em Parâmetros > API.",
-          variant: "destructive"
-        });
         throw new Error("Chave da API Pinecone não encontrada. Configure em Parâmetros > API.");
       }
       
-      // Tentar múltiplos endpoints para garantir a conexão
+      // Tentar múltiplos endpoits para garantir a conexão
       const endpointsToTry = [
-        // Endpoint padrão
+        // Endpoint padrão do Pinecone - gRPC
         {
-          descricao: "Endpoint Controller padrão",
-          url: `https://controller.${indexName}.pinecone.io/databases`,
-          tipo: "controller"
+          url: `https://${indexName}-default.svc.${indexName}.pinecone.io/vectors/query`,
+          description: "Endpoint padrão"
         },
-        // Endpoints alternativos
+        // Endpoint alternativo para GCP starter
         {
-          descricao: "Endpoint direto do índice",
-          url: `https://${indexName}-default.svc.${indexName}.pinecone.io/query`,
-          tipo: "query",
+          url: `https://${indexName}-yjxbz01.svc.gcp-starter.pinecone.io/vectors/query`,
+          description: "Endpoint GCP"
         },
+        // Endpoint alternativo para AWS
         {
-          descricao: "Endpoint regional GCP",
-          url: `https://${indexName}-yjxbz01.svc.gcp-starter.pinecone.io/query`,
-          tipo: "query"
-        },
-        {
-          descricao: "Endpoint regional AWS",
-          url: `https://${indexName}-c6ervab.svc.us-east-1-aws.pinecone.io/query`,
-          tipo: "query"
+          url: `https://${indexName}-c6ervab.svc.us-east-1-aws.pinecone.io/vectors/query`,
+          description: "Endpoint AWS"
         }
       ];
       
-      let documentos: Metadado[] = [];
-      let sucessoConexao = false;
-      
       // Função para criar um vetor zero para consulta
-      const createZeroVector = (dim: number = 1536) => Array(dim).fill(0);
+      // Usamos 384 dimensões como no código Python de referência 
+      const createZeroVector = (dim: number = 384) => Array(dim).fill(0);
+      
+      let documentos: Metadado[] = [];
+      let connected = false;
       
       // Tentar cada endpoint até conseguir
       for (const endpoint of endpointsToTry) {
         try {
-          console.log(`Tentando conexão com: ${endpoint.descricao} (${endpoint.url})`);
+          console.log(`Tentando conectar com ${endpoint.description}: ${endpoint.url}`);
           
-          if (endpoint.tipo === "controller") {
-            // Obter detalhes do controlador do Pinecone
-            const controllerResponse = await fetch(endpoint.url, {
-              method: 'GET',
-              headers: {
-                'Api-Key': pineconeApiKey,
-                'Content-Type': 'application/json',
-                'Accept': 'application/json'
-              },
-              signal: AbortSignal.timeout(7000)
+          const queryResponse = await fetch(endpoint.url, {
+            method: 'POST',
+            headers: {
+              'Api-Key': pineconeApiKey,
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              namespace: namespace,
+              topK: topK,
+              includeMetadata: true,
+              vector: createZeroVector(),
+              includeValues: false
+            }),
+            // Adicionar timeout para não ficar esperando indefinidamente
+            signal: AbortSignal.timeout(10000)
+          });
+          
+          if (!queryResponse.ok) {
+            console.error(`Falha no endpoint ${endpoint.description}: ${queryResponse.status} ${queryResponse.statusText}`);
+            continue; // Tentar próximo endpoint
+          }
+          
+          const queryResult = await queryResponse.json();
+          console.log("Resposta do Pinecone:", JSON.stringify(queryResult).substring(0, 200) + "...");
+          
+          if (queryResult.matches && queryResult.matches.length > 0) {
+            documentos = queryResult.matches.map((match: any) => ({
+              id: match.id,
+              ...match.metadata
+            }));
+            
+            console.log(`✅ SUCESSO! Encontrados ${documentos.length} documentos reais no Pinecone.`);
+            connected = true;
+            
+            toast({
+              title: "Conectado ao Pinecone",
+              description: `${documentos.length} documentos reais carregados com sucesso.`
             });
             
-            if (!controllerResponse.ok) {
-              console.log(`Erro no endpoint ${endpoint.descricao}: ${controllerResponse.status} ${controllerResponse.statusText}`);
-              continue; // Tentar próximo endpoint
-            }
-            
-            const indexDetails = await controllerResponse.json();
-            console.log("Detalhes do índice obtidos:", indexDetails);
-            
-            // Construir URL para consulta
-            let hostUrl;
-            if (Array.isArray(indexDetails) && indexDetails[0]) {
-              hostUrl = `https://${indexDetails[0].name}-${indexDetails[0].host}`;
-            } else if (indexDetails.host) {
-              hostUrl = `https://${indexName}-${indexDetails.host}`;
-            } else {
-              throw new Error("Formato de resposta do controller Pinecone não reconhecido");
-            }
-            
-            console.log(`URL de consulta construída: ${hostUrl}`);
-            
-            // Fazer a consulta para obter os documentos
-            const queryResponse = await fetch(`${hostUrl}/query`, {
-              method: 'POST',
-              headers: {
-                'Api-Key': pineconeApiKey,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                namespace: namespace,
-                topK: topK,
-                includeMetadata: true,
-                vector: createZeroVector()
-              }),
-              signal: AbortSignal.timeout(7000)
-            });
-            
-            if (!queryResponse.ok) {
-              throw new Error(`Erro na consulta: ${queryResponse.status} ${queryResponse.statusText}`);
-            }
-            
-            const queryResult = await queryResponse.json();
-            
-            if (queryResult.matches && queryResult.matches.length > 0) {
-              documentos = queryResult.matches.map((match: any) => ({
-                id: match.id,
-                ...match.metadata
-              }));
-              
-              sucessoConexao = true;
-              console.log(`✅ SUCESSO! Encontrados ${documentos.length} documentos reais no Pinecone.`);
-              break; // Sair do loop se tiver sucesso
-            } else {
-              console.log("Nenhum documento encontrado neste endpoint");
-            }
-          } else if (endpoint.tipo === "query") {
-            // Tentativa direta no endpoint de consulta
-            const queryResponse = await fetch(endpoint.url, {
-              method: 'POST',
-              headers: {
-                'Api-Key': pineconeApiKey,
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                namespace: namespace,
-                topK: topK,
-                includeMetadata: true,
-                vector: createZeroVector()
-              }),
-              signal: AbortSignal.timeout(7000)
-            });
-            
-            if (!queryResponse.ok) {
-              console.log(`Erro no endpoint ${endpoint.descricao}: ${queryResponse.status} ${queryResponse.statusText}`);
-              continue; // Tentar próximo endpoint
-            }
-            
-            const queryResult = await queryResponse.json();
-            console.log(`Resultado da consulta em ${endpoint.descricao}:`, queryResult);
-            
-            if (queryResult.matches && queryResult.matches.length > 0) {
-              documentos = queryResult.matches.map((match: any) => ({
-                id: match.id,
-                ...match.metadata
-              }));
-              
-              sucessoConexao = true;
-              console.log(`✅ SUCESSO! Encontrados ${documentos.length} documentos reais no Pinecone usando ${endpoint.descricao}`);
-              break; // Sair do loop se tiver sucesso
-            } else {
-              console.log(`Nenhum documento encontrado no endpoint ${endpoint.descricao}`);
-            }
+            break; // Sair do loop após sucesso
+          } else {
+            console.log(`Nenhum documento encontrado no endpoint ${endpoint.description}`);
           }
         } catch (error) {
-          console.error(`Falha ao tentar ${endpoint.descricao}:`, error);
+          console.error(`Erro ao tentar conectar com ${endpoint.description}:`, error);
           // Continuar para o próximo endpoint
         }
       }
       
-      if (sucessoConexao && documentos.length > 0) {
+      // Se não conseguiu conectar com nenhum endpoint, usar dados mockados
+      if (!connected || documentos.length === 0) {
+        console.warn("Não foi possível obter dados reais do Pinecone. Usando dados de demonstração temporariamente.");
         toast({
-          title: "Conectado ao Pinecone",
-          description: `${documentos.length} documentos reais carregados com sucesso.`
+          title: "Erro na conexão com Pinecone",
+          description: "Usando dados de demonstração temporários. Verifique sua conexão ou configurações da API.",
+          variant: "destructive"
         });
-        return documentos;
+        return mockDocumentos;
       }
       
-      // Se chegamos aqui, todas as tentativas falharam
-      console.log("Todas as tentativas de conexão com o Pinecone falharam.");
-      toast({
-        title: "Não foi possível conectar ao Pinecone",
-        description: "Usando dados de exemplo para demonstração. Verifique sua conexão de rede ou as configurações da API.",
-        variant: "destructive"
-      });
-      
-      return mockDocumentos;
+      return documentos;
     } catch (error) {
-      console.error("Erro geral ao buscar documentos do Pinecone:", error);
+      console.error("Erro ao buscar documentos do Pinecone:", error);
       toast({
         title: "Erro na conexão",
-        description: "Usando dados locais para visualização. Erro de conexão com Pinecone.",
+        description: "Usando dados temporários para visualização. Erro: " + (error instanceof Error ? error.message : String(error)),
         variant: "destructive"
       });
       
