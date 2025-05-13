@@ -91,7 +91,12 @@ export function AppSidebar({
   // Versão mobile com Sheet
   if (isMobileSidebar) {
     return (
-      <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+      <div className="block">
+        <SheetTrigger asChild>
+          <Button variant="ghost" size="sm" className="text-white hover:bg-burgundy p-1">
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+        </SheetTrigger>
         <SheetContent side="left" className="bg-burgundy-light text-white p-0 w-52 z-50">
           {/* Logo space */}
           <div className="h-16 flex items-center justify-center border-b border-burgundy-dark mb-2">
@@ -114,7 +119,7 @@ export function AppSidebar({
             ))}
           </nav>
         </SheetContent>
-      </Sheet>
+      </div>
     );
   }
 
