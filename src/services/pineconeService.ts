@@ -1,5 +1,7 @@
+
 import { INDEX_NAME } from '../config/env';
 import { configService } from './configService';
+import { toast } from '@/hooks/use-toast';
 
 interface Metadado {
   id?: string;
@@ -26,6 +28,11 @@ export const pineconeService = {
       const indexName = configService.getIndexName();
       
       if (!pineconeApiKey) {
+        toast({
+          title: "Erro",
+          description: "Chave da API Pinecone não encontrada. Configure em Parâmetros > API.",
+          variant: "destructive"
+        });
         throw new Error("Chave da API Pinecone não encontrada. Configure em Parâmetros > API.");
       }
       
@@ -38,6 +45,13 @@ export const pineconeService = {
       });
       
       if (!indexDetailsResponse.ok) {
+        const errorText = await indexDetailsResponse.text();
+        console.error("Erro na resposta do Pinecone:", errorText);
+        toast({
+          title: "Erro ao acessar o Pinecone",
+          description: `Status: ${indexDetailsResponse.status} - ${indexDetailsResponse.statusText}`,
+          variant: "destructive"
+        });
         throw new Error(`Erro ao acessar o Pinecone: ${indexDetailsResponse.statusText}`);
       }
       
@@ -63,10 +77,18 @@ export const pineconeService = {
       });
       
       if (!queryResponse.ok) {
+        const errorText = await queryResponse.text();
+        console.error("Erro na consulta ao Pinecone:", errorText);
+        toast({
+          title: "Erro na consulta ao Pinecone",
+          description: `Status: ${queryResponse.status} - ${queryResponse.statusText}`,
+          variant: "destructive"
+        });
         throw new Error(`Erro na consulta ao Pinecone: ${queryResponse.statusText}`);
       }
       
       const queryResult = await queryResponse.json();
+      console.log("Resultado da consulta Pinecone:", queryResult);
       
       // Transformar os resultados do Pinecone para o formato esperado
       const documentos: Metadado[] = queryResult.matches.map((match: any) => ({
@@ -77,6 +99,11 @@ export const pineconeService = {
       return documentos;
     } catch (error) {
       console.error("Erro ao buscar documentos:", error);
+      toast({
+        title: "Erro ao buscar documentos",
+        description: error instanceof Error ? error.message : "Erro desconhecido ao buscar documentos",
+        variant: "destructive"
+      });
       return [];
     }
   },
@@ -91,6 +118,11 @@ export const pineconeService = {
       const indexName = configService.getIndexName();
       
       if (!pineconeApiKey) {
+        toast({
+          title: "Erro",
+          description: "Chave da API Pinecone não encontrada.",
+          variant: "destructive"
+        });
         throw new Error("Chave da API Pinecone não encontrada.");
       }
       
@@ -101,6 +133,15 @@ export const pineconeService = {
           'Api-Key': pineconeApiKey
         }
       });
+      
+      if (!indexDetailsResponse.ok) {
+        toast({
+          title: "Erro ao acessar o Pinecone",
+          description: indexDetailsResponse.statusText,
+          variant: "destructive"
+        });
+        throw new Error(`Erro ao acessar o Pinecone: ${indexDetailsResponse.statusText}`);
+      }
       
       const indexDetails = await indexDetailsResponse.json();
       const host = `https://${indexName}-${indexDetails.host}`;
@@ -119,8 +160,18 @@ export const pineconeService = {
       });
       
       if (!deleteResponse.ok) {
+        toast({
+          title: "Erro ao deletar do Pinecone",
+          description: deleteResponse.statusText,
+          variant: "destructive"
+        });
         throw new Error(`Erro ao deletar do Pinecone: ${deleteResponse.statusText}`);
       }
+      
+      toast({
+        title: "Documento deletado",
+        description: "O documento foi removido com sucesso."
+      });
       
       return true;
     } catch (error) {

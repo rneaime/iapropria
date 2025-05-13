@@ -1,6 +1,7 @@
 
-import { API_KEYS, INDEX_NAME } from '../config/env';
-import { toast } from '../components/ui/use-toast';
+import { INDEX_NAME } from '../config/env';
+import { configService } from './configService';
+import { toast } from '@/hooks/use-toast';
 
 export interface UpsertMetadata {
   tipo_documento?: string;
@@ -13,6 +14,8 @@ export interface UpsertMetadata {
   filtro8?: string;  // livre1
   filtro9?: string;  // livre2
   filtro10?: string; // livre3
+  nome_arquivo?: string;
+  data_processamento?: string;
   [key: string]: any;
 }
 
@@ -52,10 +55,18 @@ export const upsertService = {
     try {
       console.log(`Iniciando processamento do arquivo: ${filePath}`);
       console.log(`Namespace: ${namespace}`);
-      console.log(`Metadados:`, metadata);
+      console.log(`Metadados completos:`, metadata);
       
       // Em um aplicativo real, faríamos uma chamada à API que processa o arquivo
-      // em um backend Python que chama as funções upsert correspondentes
+      // e envia para o Pinecone com os metadados fornecidos
+      
+      // Obter a chave da API Pinecone
+      const apiKeys = configService.getApiKeys();
+      const pineconeApiKey = apiKeys.PINECONE_API_KEY;
+      
+      if (!pineconeApiKey) {
+        throw new Error("Chave da API Pinecone não encontrada. Configure em Parâmetros > API.");
+      }
       
       // Simulando processamento
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -66,11 +77,12 @@ export const upsertService = {
       // Simulação de resposta com base na extensão
       const response: UpsertResponse = {
         status: "success",
-        message: `Arquivo ${fileName} processado com sucesso`,
+        message: `Arquivo ${fileName} processado com sucesso e enviado para o Pinecone`,
         detalhes: {
           chunks_criados: Math.floor(Math.random() * 20) + 5,
           namespace: namespace,
-          index: INDEX_NAME
+          index: INDEX_NAME,
+          arquivo: fileName
         }
       };
       

@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/use-toast";
 import { Loader2, Upload } from "lucide-react";
 import { 
   Card, 
@@ -15,6 +14,7 @@ import {
 import { UpsertMetadata, upsertService } from '@/services/upsertService';
 import { INDEX_NAME } from '@/config/env';
 import { pineconeService } from '@/services/pineconeService';
+import { toast } from '@/hooks/use-toast';
 
 interface UpsertFormProps {
   userId: string;
@@ -141,8 +141,18 @@ export function UpsertForm({ userId, folderPath }: UpsertFormProps) {
     setProcessing(true);
     
     try {
+      // Adicionar nome do arquivo aos metadados
       const filePath = savedFiles.find(f => f.name === selectedSavedFile)?.path || '';
-      const result = await upsertService.processFile(filePath, userId, metadata);
+      const fileName = selectedSavedFile;
+      const updatedMetadata = {
+        ...metadata,
+        nome_arquivo: fileName,
+        data_processamento: new Date().toISOString().split('T')[0]
+      };
+      
+      console.log(`Processando arquivo ${filePath} com namespace ${userId} e metadados:`, updatedMetadata);
+      
+      const result = await upsertService.processFile(filePath, userId, updatedMetadata);
       
       if (result.status === "success") {
         toast({

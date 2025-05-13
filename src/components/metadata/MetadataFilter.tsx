@@ -8,7 +8,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "@/hooks/use-toast";
 import { pineconeService } from "@/services/pineconeService";
 import { Trash, Save, CheckSquare } from "lucide-react";
 
@@ -26,18 +26,21 @@ export function MetadataFilter({ userId, onFilterChange }: MetadataFilterProps) 
   
   // Colunas para filtrar
   const filterColumns = [
-    'nome_arquivo', 'categoria', 'departamento', 'responsável', 'prioridade',
+    'nome_arquivo', 'categoria', 'departamento', 'responsavel', 'prioridade',
     'subcategoria', 'status', 'tipo_documento'
   ];
   
   useEffect(() => {
     const fetchData = async () => {
       try {
+        console.log("Buscando documentos para Filtro de Metadados, userId:", userId);
         const docs = await pineconeService.buscarDocumentos(userId);
+        console.log("Documentos recebidos:", docs);
         setDocuments(docs);
         
         // Carregar filtros salvos
         const savedFilters = pineconeService.getFiltros(userId);
+        console.log("Filtros salvos:", savedFilters);
         setFilters(savedFilters);
         
         if (onFilterChange) {
