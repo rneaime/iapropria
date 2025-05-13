@@ -1,10 +1,17 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
-import { User, LogOut } from 'lucide-react';
+import { User, LogOut, Menu } from 'lucide-react';
 import { aiService } from '@/services/aiService';
 import { AppSidebar } from '@/components/layout/AppSidebar';
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarContent,
+  SidebarInset,
+  SidebarTrigger,
+} from "@/components/ui/sidebar";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -31,46 +38,65 @@ export function AppLayout({ children, user, onLogout, activeTab, setActiveTab }:
   }, [user]);
   
   return (
-    <div className="min-h-screen bg-burgundy-subtle flex flex-col">
-      {/* Header e Menu fixos com largura igual */}
-      <div className="fixed top-0 left-0 right-0 z-50">
-        {/* Header */}
-        <header className="bg-burgundy-light text-white shadow-md">
-          <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-            <div className="flex items-center space-x-2">
-              <div className="font-bold text-xl">IAprópria</div>
-            </div>
-            
-            <div className="flex items-center space-x-4">
-              {!isMobile && (
-                <div className="text-sm text-white/90 hidden md:block">
-                  Modelo: <span className="font-medium">{modelName?.split('/').pop() || "Não selecionado"}</span>
-                </div>
-              )}
+    <SidebarProvider>
+      <div className="min-h-screen bg-burgundy-subtle flex flex-col w-full">
+        {/* Header fixo */}
+        <div className="fixed top-0 left-0 right-0 z-50">
+          <header className="bg-burgundy-light text-white shadow-md">
+            <div className="container mx-auto px-4 py-3 flex justify-between items-center">
               <div className="flex items-center space-x-2">
-                <User className="h-4 w-4 text-white/90" />
-                <span className="font-medium">{user?.nome || "Usuário"}</span>
+                {isMobile && (
+                  <SidebarTrigger className="mr-2" />
+                )}
+                <div className="font-bold text-xl">IAprópria</div>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => onLogout(true)} className="text-white hover:bg-burgundy">
-                <LogOut className="h-4 w-4 mr-1" />
-                <span>Sair</span>
-              </Button>
+              
+              <div className="flex items-center space-x-4">
+                {!isMobile && (
+                  <div className="text-sm text-white/90 hidden md:block">
+                    Modelo: <span className="font-medium">{modelName?.split('/').pop() || "Não selecionado"}</span>
+                  </div>
+                )}
+                <div className="flex items-center space-x-2">
+                  <User className="h-4 w-4 text-white/90" />
+                  <span className="font-medium">{user?.nome || "Usuário"}</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => onLogout(true)} className="text-white hover:bg-burgundy">
+                  <LogOut className="h-4 w-4 mr-1" />
+                  <span>Sair</span>
+                </Button>
+              </div>
             </div>
-          </div>
-        </header>
-        
-        {/* Navigation - mantendo a mesma largura do header */}
-        <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      </div>
-      
-      {/* Conteúdo principal com margem superior para não ficar abaixo do header fixo */}
-      <main className="flex-1 p-6 mt-32 container mx-auto">{children}</main>
-      
-      <footer className="bg-burgundy text-white py-4">
-        <div className="container mx-auto px-4 text-center text-sm">
-          &copy; {new Date().getFullYear()} IAprópria. Todos os direitos reservados.
+          </header>
         </div>
-      </footer>
-    </div>
+        
+        <div className="flex flex-1 pt-14">
+          {/* Sidebar for desktop */}
+          {!isMobile && (
+            <Sidebar variant="inset" side="left">
+              <SidebarContent>
+                <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+              </SidebarContent>
+            </Sidebar>
+          )}
+          
+          {/* Sidebar for mobile - will be triggered by SidebarTrigger */}
+          {isMobile && (
+            <AppSidebar activeTab={activeTab} setActiveTab={setActiveTab} isMobileSidebar />
+          )}
+          
+          {/* Main content */}
+          <SidebarInset className="container mx-auto p-6 bg-burgundy-subtle">
+            {children}
+          </SidebarInset>
+        </div>
+        
+        <footer className="bg-burgundy text-white py-4">
+          <div className="container mx-auto px-4 text-center text-sm">
+            &copy; {new Date().getFullYear()} IAprópria. Todos os direitos reservados.
+          </div>
+        </footer>
+      </div>
+    </SidebarProvider>
   );
 }

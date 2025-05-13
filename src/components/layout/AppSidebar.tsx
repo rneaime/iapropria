@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import {
   MessageSquare,
   History,
@@ -8,62 +8,28 @@ import {
   Upload,
   Settings,
   HelpCircle,
-  Menu,
   X
 } from 'lucide-react';
-import {
-  NavigationMenu,
-  NavigationMenuContent,
-  NavigationMenuItem,
-  NavigationMenuLink,
-  NavigationMenuList,
-  NavigationMenuTrigger,
-  navigationMenuTriggerStyle
-} from "@/components/ui/navigation-menu";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useIsMobile } from "@/hooks/use-mobile";
+import {
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+} from "@/components/ui/sidebar";
 
 interface AppSidebarProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
+  isMobileSidebar?: boolean;
 }
 
-export function AppSidebar({ activeTab, setActiveTab }: AppSidebarProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+export function AppSidebar({ activeTab, setActiveTab, isMobileSidebar = false }: AppSidebarProps) {
+  const [isMenuOpen, setIsMenuOpen] = React.useState(false);
   const isMobile = useIsMobile();
 
   const menuItems = [
-    {
-      title: "Ajuda",
-      value: "ajuda",
-      icon: HelpCircle
-    },
-    {
-      title: "Configurações",
-      value: "parametros",
-      icon: Settings
-    },
-    {
-      title: "Upload",
-      value: "enviar-arquivo",
-      icon: Upload
-    },
-    {
-      title: "Gerar Imagem",
-      value: "gerar-imagem",
-      icon: Image
-    },
-    {
-      title: "Filtros",
-      value: "filtros",
-      icon: Filter
-    },
-    {
-      title: "Histórico",
-      value: "historico",
-      icon: History
-    },
     {
       title: "Conversa IA",
       value: "conversa",
@@ -73,6 +39,36 @@ export function AppSidebar({ activeTab, setActiveTab }: AppSidebarProps) {
       title: "Atendimento IA",
       value: "atendimento",
       icon: MessageSquare
+    },
+    {
+      title: "Histórico",
+      value: "historico",
+      icon: History
+    },
+    {
+      title: "Filtros",
+      value: "filtros",
+      icon: Filter
+    },
+    {
+      title: "Gerar Imagem",
+      value: "gerar-imagem",
+      icon: Image
+    },
+    {
+      title: "Upload",
+      value: "enviar-arquivo",
+      icon: Upload
+    },
+    {
+      title: "Configurações",
+      value: "parametros",
+      icon: Settings
+    },
+    {
+      title: "Ajuda",
+      value: "ajuda",
+      icon: HelpCircle
     }
   ];
 
@@ -83,60 +79,48 @@ export function AppSidebar({ activeTab, setActiveTab }: AppSidebarProps) {
     }
   };
 
-  // Versão mobile com botão de menu que abre Sheet
-  if (isMobile) {
+  // Versão mobile com Sheet
+  if (isMobileSidebar) {
     return (
-      <div className="w-full bg-burgundy-light py-2 px-4 flex justify-end">
-        <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
-          <SheetTrigger asChild>
-            <Button variant="ghost" size="icon" className="text-white">
-              <Menu className="h-6 w-6" />
-              <span className="sr-only">Menu</span>
-            </Button>
-          </SheetTrigger>
-          <SheetContent side="right" className="bg-burgundy-light text-white p-0 w-64 z-50">
-            <div className="flex justify-end p-4">
-              <Button variant="ghost" size="icon" className="text-white" onClick={() => setIsMenuOpen(false)}>
-                <X className="h-6 w-6" />
+      <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+        <SheetContent side="left" className="bg-burgundy-light text-white p-0 w-64 z-50 pt-16">
+          <nav className="flex flex-col">
+            {menuItems.map((item) => (
+              <Button
+                key={item.value}
+                variant="ghost"
+                className={`justify-start px-4 py-3 w-full ${
+                  activeTab === item.value ? "bg-burgundy text-white" : "text-white hover:bg-burgundy-dark"
+                }`}
+                onClick={() => handleMenuItemClick(item.value)}
+              >
+                <item.icon className="h-4 w-4 mr-2" />
+                <span>{item.title}</span>
               </Button>
-            </div>
-            <nav className="flex flex-col">
-              {[...menuItems].reverse().map((item) => (
-                <Button
-                  key={item.value}
-                  variant="ghost"
-                  className={`justify-start px-4 py-3 w-full ${
-                    activeTab === item.value ? "bg-burgundy text-white" : "text-white hover:bg-burgundy-dark"
-                  }`}
-                  onClick={() => handleMenuItemClick(item.value)}
-                >
-                  <item.icon className="h-4 w-4 mr-2" />
-                  <span>{item.title}</span>
-                </Button>
-              ))}
-            </nav>
-          </SheetContent>
-        </Sheet>
-      </div>
+            ))}
+          </nav>
+        </SheetContent>
+      </Sheet>
     );
   }
 
-  // Versão desktop com menu horizontal da direita para esquerda
+  // Versão desktop - menu vertical à esquerda
   return (
-    <NavigationMenu className="w-full justify-end px-4 py-2 bg-burgundy-light">
-      <NavigationMenuList className="flex-row-reverse">
-        {menuItems.map((item) => (
-          <NavigationMenuItem key={item.value}>
-            <NavigationMenuLink 
-              className={navigationMenuTriggerStyle() + (activeTab === item.value ? " bg-burgundy text-white" : "")}
-              onClick={() => handleMenuItemClick(item.value)}
-            >
-              <item.icon className="h-4 w-4 mr-2" />
-              <span>{item.title}</span>
-            </NavigationMenuLink>
-          </NavigationMenuItem>
-        ))}
-      </NavigationMenuList>
-    </NavigationMenu>
+    <SidebarMenu className="bg-burgundy-light text-white p-2 space-y-1">
+      {menuItems.map((item) => (
+        <SidebarMenuItem key={item.value}>
+          <SidebarMenuButton
+            isActive={activeTab === item.value}
+            className={`w-full justify-start ${
+              activeTab === item.value ? "bg-burgundy text-white" : "text-white hover:bg-burgundy-dark"
+            }`}
+            onClick={() => handleMenuItemClick(item.value)}
+          >
+            <item.icon className="h-4 w-4 mr-2" />
+            <span>{item.title}</span>
+          </SidebarMenuButton>
+        </SidebarMenuItem>
+      ))}
+    </SidebarMenu>
   );
 }
