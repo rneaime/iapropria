@@ -1,356 +1,261 @@
-import { configService } from './configService';
-import { INDEX_NAME } from '../config/env';
-import { Pinecone } from '@pinecone-database/pinecone';
 
-// Cliente Pinecone inicializado com lazy loading
-let pineconeClient: Pinecone | null = null;
+import { Pinecone } from "@pinecone-database/pinecone";
+import { configService } from "./configService";
 
-// Host específico do Pinecone
-const PINECONE_HOST = "https://iapropria2-unfyip3.svc.aped-4627-b74a.pinecone.io";
+// Tipos para documentos e resultados de busca
+export interface Documento {
+  id: string;
+  categoria?: string;
+  nome_arquivo?: string;
+  conteudo?: string;
+  texto?: string;
+  metadados?: Record<string, any>;
+}
 
-const initPineconeClient = (): Pinecone | null => {
-  try {
-    const apiKeys = configService.getApiKeys();
-    const pineconeApiKey = apiKeys.PINECONE_API_KEY;
-    
-    if (!pineconeApiKey) {
-      console.error("Chave da API Pinecone não configurada");
-      return null;
-    }
-    
-    console.log("Inicializando cliente Pinecone com a biblioteca oficial");
-    return new Pinecone({ apiKey: pineconeApiKey });
-  } catch (error) {
-    console.error("Erro ao inicializar cliente Pinecone:", error);
-    return null;
-  }
-};
+export interface SearchResult {
+  id: string;
+  score: number;
+  metadata: Record<string, any>;
+}
 
 export const pineconeService = {
+  // Testa a conexão com o Pinecone
   testConnection: async (): Promise<boolean> => {
     try {
-      console.log("Testando conexão com Pinecone usando SDK oficial...");
+      const apiKey = configService.getPineconeApiKey();
+      const host = configService.getPineconeHost();
       
-      // Obter a chave da API Pinecone
-      const apiKeys = configService.getApiKeys();
-      const pineconeApiKey = apiKeys.PINECONE_API_KEY;
-      
-      if (!pineconeApiKey) {
-        throw new Error("Chave da API Pinecone não encontrada");
-      }
-      
-      // Inicializar cliente se ainda não foi feito
-      if (!pineconeClient) {
-        pineconeClient = initPineconeClient();
-        if (!pineconeClient) {
-          throw new Error("Não foi possível inicializar o cliente Pinecone");
-        }
-      }
-      
-      // Nome do índice configurado
-      const indexName = configService.getIndexName() || INDEX_NAME;
-      console.log(`Usando índice: ${indexName}`);
-      
-      // Conectar ao índice Pinecone
-      const index = pineconeClient.index(indexName);
-      
-      // Testar conexão com query simples
-      const queryResponse = await index.query({
-        namespace: "1",
-        topK: 1,
-        includeMetadata: true,
-        vector: Array(384).fill(0),
-        includeValues: false
-      });
-      
-      console.log("Conexão com Pinecone estabelecida com sucesso:", queryResponse);
-      return true;
-      
-    } catch (error) {
-      console.error("Erro ao testar conexão com Pinecone via SDK:", error);
-      
-      // Tentar conexão alternativa via REST API
-      try {
-        return await pineconeService.testConnectionViaRest();
-      } catch (restError) {
-        console.error("Método REST API também falhou:", restError);
+      if (!apiKey || !host) {
+        console.error("Pinecone API key ou host não configurados");
         return false;
       }
+
+      const pc = new Pinecone({ apiKey });
+      const indexName = "documento";
+      const indexes = await pc.listIndexes();
+      
+      console.log("Pinecone connection test: ", indexes);
+      return Array.isArray(indexes) && indexes.some(i => i.name === indexName);
+    } catch (error) {
+      console.error("Erro ao testar conexão com Pinecone:", error);
+      return false;
     }
   },
-  
+
+  // Testa a conexão com Pinecone via REST
   testConnectionViaRest: async (): Promise<boolean> => {
     try {
-      console.log("Testando conexão com Pinecone via REST API...");
+      const apiKey = configService.getPineconeApiKey();
+      const host = configService.getPineconeHost();
       
-      const apiKeys = configService.getApiKeys();
-      const pineconeApiKey = apiKeys.PINECONE_API_KEY;
-      
-      if (!pineconeApiKey) {
-        throw new Error("Chave da API Pinecone não encontrada");
-      }
-      
-      // Usar o host específico fornecido
-      const baseUrl = PINECONE_HOST;
-      console.log("Usando URL específica para query REST:", baseUrl);
-      
-      const queryResponse = await fetch(`${baseUrl}/query`, {
-        method: 'POST',
-        headers: {
-          'Api-Key': pineconeApiKey,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          namespace: "1",
-          topK: 1,
-          includeMetadata: true,
-          vector: Array(384).fill(0),
-          includeValues: false
-        }),
-        signal: AbortSignal.timeout(15000)
-      });
-      
-      if (!queryResponse.ok) {
-        throw new Error(`Falha na query REST: ${queryResponse.status} ${queryResponse.statusText}`);
-      }
-      
-      const result = await queryResponse.json();
-      console.log("Conexão via REST API bem-sucedida:", result);
-      return true;
-      
-    } catch (error) {
-      console.error("Erro ao testar conexão via REST API:", error);
-      throw error;
-    }
-  },
-  
-  query: async (query: string, filters?: Record<string, any>, maxResults = 10): Promise<SearchResult[]> => {
-    try {
-      // Obter a chave da API Pinecone
-      const apiKeys = configService.getApiKeys();
-      const pineconeApiKey = apiKeys.PINECONE_API_KEY;
-      
-      if (!pineconeApiKey) {
-        throw new Error("Chave da API Pinecone não encontrada");
-      }
-      
-      // Inicializar cliente se ainda não foi feito
-      if (!pineconeClient) {
-        pineconeClient = initPineconeClient();
-        if (!pineconeClient) {
-          throw new Error("Não foi possível inicializar o cliente Pinecone");
-        }
-      }
-      
-      // Nome do índice configurado
-      const indexName = configService.getIndexName() || INDEX_NAME;
-      console.log(`Usando índice: ${indexName}`);
-      
-      // Gerar vetor a partir da consulta
-      // Em um cenário real, isso seria feito através de um modelo de embeddings
-      const mockVector = Array.from({ length: 384 }, () => Math.random() * 2 - 1);
-      
-      // Preparar filtros
-      let filter = {};
-      if (filters && Object.keys(filters).length > 0) {
-        filter = filters;
-      }
-      
-      // Conectar ao índice Pinecone
-      const index = pineconeClient.index(indexName);
-      
-      // Realizar consulta no Pinecone
-      const namespace = "1"; // Usar namespace fixo "1"
-      console.log(`Consultando namespace: ${namespace} com filtro:`, filter);
-      
-      const queryResponse = await index.query({
-        namespace: namespace,
-        topK: maxResults,
-        includeMetadata: true,
-        filter: filter,
-        vector: mockVector
-      });
-      
-      console.log("Resposta da consulta:", queryResponse);
-      
-      // Processar resultados
-      return (queryResponse.matches || []).map(match => ({
-        id: match.id,
-        score: match.score || 0,
-        metadata: match.metadata || {},
-        text: (match.metadata?.text as string) || "Nenhum texto disponível"
-      }));
-      
-    } catch (error) {
-      console.error("Erro ao consultar Pinecone:", error);
-      
-      // Tentar método alternativo
-      try {
-        return await pineconeService.queryViaRest(query, filters, maxResults);
-      } catch (restError) {
-        console.error("Método REST também falhou:", restError);
-        return [];
-      }
-    }
-  },
-  
-  queryViaRest: async (query: string, filters?: Record<string, any>, maxResults = 10): Promise<SearchResult[]> => {
-    try {
-      console.log("Consultando Pinecone via REST API...");
-      
-      const apiKeys = configService.getApiKeys();
-      const pineconeApiKey = apiKeys.PINECONE_API_KEY;
-      
-      if (!pineconeApiKey) {
-        throw new Error("Chave da API Pinecone não encontrada");
-      }
-      
-      // Gerar vetor a partir da consulta
-      const mockVector = Array.from({ length: 384 }, () => Math.random() * 2 - 1);
-      
-      // Preparar filtros
-      let filter = {};
-      if (filters && Object.keys(filters).length > 0) {
-        filter = filters;
-      }
-      
-      // Usar o host específico fornecido
-      const baseUrl = PINECONE_HOST;
-      console.log("Usando URL específica para query REST:", baseUrl);
-      
-      const namespace = "1"; // Usar namespace fixo "1"
-      
-      const queryResponse = await fetch(`${baseUrl}/query`, {
-        method: 'POST',
-        headers: {
-          'Api-Key': pineconeApiKey,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          namespace: namespace,
-          topK: maxResults,
-          includeMetadata: true,
-          filter: filter,
-          vector: mockVector
-        }),
-        signal: AbortSignal.timeout(15000)
-      });
-      
-      if (!queryResponse.ok) {
-        throw new Error(`Falha na query REST: ${queryResponse.status} ${queryResponse.statusText}`);
-      }
-      
-      const result = await queryResponse.json();
-      console.log("Resposta da query REST:", result);
-      
-      // Processar resultados
-      return (result.matches || []).map((match: any) => ({
-        id: match.id,
-        score: match.score || 0,
-        metadata: match.metadata || {},
-        text: (match.metadata?.text as string) || "Nenhum texto disponível"
-      }));
-      
-    } catch (error) {
-      console.error("Erro ao consultar via REST API:", error);
-      throw error;
-    }
-  },
-  
-  deleteOne: async (id: string): Promise<boolean> => {
-    try {
-      // Obter a chave da API Pinecone
-      const apiKeys = configService.getApiKeys();
-      const pineconeApiKey = apiKeys.PINECONE_API_KEY;
-      
-      if (!pineconeApiKey) {
-        throw new Error("Chave da API Pinecone não encontrada");
-      }
-      
-      // Inicializar cliente se ainda não foi feito
-      if (!pineconeClient) {
-        pineconeClient = initPineconeClient();
-        if (!pineconeClient) {
-          throw new Error("Não foi possível inicializar o cliente Pinecone");
-        }
-      }
-      
-      // Nome do índice configurado
-      const indexName = configService.getIndexName() || INDEX_NAME;
-      console.log(`Usando índice: ${indexName} para excluir ID: ${id}`);
-      
-      // Conectar ao índice Pinecone
-      const index = pineconeClient.index(indexName);
-      
-      // Usar namespace fixo "1"
-      const namespace = "1";
-      
-      // Realizar exclusão no Pinecone
-      await index.deleteOne(id, { namespace });
-      
-      console.log(`Documento ${id} excluído com sucesso`);
-      return true;
-      
-    } catch (error) {
-      console.error("Erro ao excluir documento:", error);
-      
-      // Tentar método alternativo
-      try {
-        return await pineconeService.deleteOneViaRest(id);
-      } catch (restError) {
-        console.error("Método REST também falhou:", restError);
+      if (!apiKey || !host) {
+        console.error("Pinecone API key ou host não configurados");
         return false;
       }
+
+      const response = await fetch(`${host}/describe_index_stats`, {
+        method: 'POST',
+        headers: {
+          'Api-Key': apiKey,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) throw new Error(`Erro na resposta: ${response.status}`);
+      
+      const data = await response.json();
+      console.log("Pinecone REST connection test:", data);
+      return true;
+    } catch (error) {
+      console.error("Erro ao testar conexão REST com Pinecone:", error);
+      return false;
+    }
+  },
+
+  // Consulta vetores no Pinecone
+  query: async (
+    query: string,
+    filters: Record<string, any> = {},
+    maxResults: number = 10
+  ): Promise<SearchResult[]> => {
+    try {
+      const apiKey = configService.getPineconeApiKey();
+      const host = configService.getPineconeHost();
+      
+      if (!apiKey || !host) {
+        console.error("Pinecone API key ou host não configurados");
+        return [];
+      }
+
+      const pc = new Pinecone({ apiKey });
+      const index = pc.index("documento");
+
+      // Convertendo a query string para vetor (simulação)
+      const queryVector = Array(1536).fill(0.1);
+
+      const queryResponse = await index.query({
+        vector: queryVector,
+        topK: maxResults,
+        filter: filters,
+        includeMetadata: true,
+        namespace: "1" // Usando o namespace adequado
+      });
+
+      console.log("Query response:", queryResponse);
+      
+      return queryResponse.matches.map(match => ({
+        id: match.id,
+        score: match.score,
+        metadata: match.metadata || {}
+      }));
+    } catch (error) {
+      console.error("Erro ao consultar Pinecone:", error);
+      return [];
+    }
+  },
+
+  // Consulta vetores no Pinecone via REST
+  queryViaRest: async (
+    query: string,
+    filters: Record<string, any> = {},
+    maxResults: number = 10
+  ): Promise<SearchResult[]> => {
+    try {
+      const apiKey = configService.getPineconeApiKey();
+      const host = configService.getPineconeHost();
+      
+      if (!apiKey || !host) {
+        console.error("Pinecone API key ou host não configurados");
+        return [];
+      }
+
+      // Convertendo a query string para vetor (simulação)
+      const queryVector = Array(1536).fill(0.1);
+
+      const response = await fetch(`${host}/query`, {
+        method: 'POST',
+        headers: {
+          'Api-Key': apiKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          vector: queryVector,
+          topK: maxResults,
+          filter: filters,
+          includeMetadata: true,
+          namespace: "1"
+        }),
+      });
+
+      if (!response.ok) throw new Error(`Erro na resposta: ${response.status}`);
+      
+      const data = await response.json();
+      
+      return data.matches.map((match: any) => ({
+        id: match.id,
+        score: match.score,
+        metadata: match.metadata || {}
+      }));
+    } catch (error) {
+      console.error("Erro ao consultar Pinecone via REST:", error);
+      return [];
     }
   },
   
-  deleteOneViaRest: async (id: string): Promise<boolean> => {
+  // Deleta um vetor pelo ID
+  deleteOne: async (id: string): Promise<boolean> => {
     try {
-      console.log(`Excluindo documento ${id} via REST API...`);
+      const apiKey = configService.getPineconeApiKey();
+      const host = configService.getPineconeHost();
       
-      const apiKeys = configService.getApiKeys();
-      const pineconeApiKey = apiKeys.PINECONE_API_KEY;
-      
-      if (!pineconeApiKey) {
-        throw new Error("Chave da API Pinecone não encontrada");
+      if (!apiKey || !host) {
+        console.error("Pinecone API key ou host não configurados");
+        return false;
       }
+
+      const pc = new Pinecone({ apiKey });
+      const index = pc.index("documento");
       
-      // Usar o host específico fornecido
-      const baseUrl = PINECONE_HOST;
-      console.log("Usando URL específica para delete REST:", baseUrl);
-      
-      // Usar namespace fixo "1"
-      const namespace = "1";
-      
-      // Construir URL com parâmetros
-      const url = new URL(`${baseUrl}/vectors/delete`);
-      
-      const deleteResponse = await fetch(url.toString(), {
-        method: 'POST',
-        headers: {
-          'Api-Key': pineconeApiKey,
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify({
-          ids: [id],
-          namespace: namespace
-        }),
-        signal: AbortSignal.timeout(15000)
-      });
-      
-      if (!deleteResponse.ok) {
-        throw new Error(`Falha no delete REST: ${deleteResponse.status} ${deleteResponse.statusText}`);
-      }
-      
-      console.log(`Documento ${id} excluído com sucesso via REST API`);
+      await index.deleteOne(id, { namespace: "1" });
+      console.log(`Documento ${id} deletado com sucesso`);
       return true;
-      
     } catch (error) {
-      console.error("Erro ao excluir via REST API:", error);
-      throw error;
+      console.error(`Erro ao deletar documento ${id}:`, error);
+      return false;
     }
+  },
+  
+  // Deleta vetores por IDs
+  deleteMany: async (ids: string[]): Promise<boolean> => {
+    try {
+      const apiKey = configService.getPineconeApiKey();
+      const host = configService.getPineconeHost();
+      
+      if (!apiKey || !host) {
+        console.error("Pinecone API key ou host não configurados");
+        return false;
+      }
+
+      const pc = new Pinecone({ apiKey });
+      const index = pc.index("documento");
+      
+      await index.deleteMany(ids, { namespace: "1" });
+      console.log(`${ids.length} documentos deletados com sucesso`);
+      return true;
+    } catch (error) {
+      console.error(`Erro ao deletar múltiplos documentos:`, error);
+      return false;
+    }
+  },
+  
+  // Implementações dos métodos adicionais necessários
+  buscarDocumentos: async (userId: string): Promise<Documento[]> => {
+    try {
+      // Simulação de busca de documentos
+      console.log(`Buscando documentos para o usuário ${userId}`);
+      return [
+        { 
+          id: "doc-1", 
+          categoria: "Financeiro",
+          nome_arquivo: "relatorio.pdf",
+          conteudo: "Conteúdo do relatório financeiro"
+        },
+        { 
+          id: "doc-2", 
+          categoria: "Legal",
+          nome_arquivo: "contrato.pdf",
+          conteudo: "Conteúdo do contrato"
+        }
+      ];
+    } catch (error) {
+      console.error("Erro ao buscar documentos:", error);
+      return [];
+    }
+  },
+  
+  deletarDocumento: async (userId: string, docId: string): Promise<boolean> => {
+    try {
+      console.log(`Deletando documento ${docId} para usuário ${userId}`);
+      // Implementação real usaria o método deleteOne
+      return await pineconeService.deleteOne(docId);
+    } catch (error) {
+      console.error("Erro ao deletar documento:", error);
+      return false;
+    }
+  },
+  
+  getFiltros: async (userId: string): Promise<Record<string, any>[]> => {
+    console.log(`Buscando filtros para o usuário ${userId}`);
+    // Simulação de retorno de filtros
+    return [
+      { id: "filter-1", nome: "Documentos Recentes", filtro: { data: { $gt: "2023-01-01" } } },
+      { id: "filter-2", nome: "Documentos Financeiros", filtro: { categoria: "Financeiro" } }
+    ];
+  },
+  
+  salvarFiltros: async (userId: string, filtros: Record<string, any>): Promise<boolean> => {
+    console.log(`Salvando filtros para o usuário ${userId}:`, filtros);
+    // Simulação de salvamento de filtros
+    return true;
   }
 };
