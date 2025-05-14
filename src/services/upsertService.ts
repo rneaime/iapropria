@@ -129,23 +129,20 @@ export const upsertService = {
       console.log(`Enviando upsert para o Pinecone com ID ${vectorId} e namespace ${ns}`);
       
       // Realizar o upsert para o Pinecone
-      const upsertResponse = await index.upsert({
-        vectors: [{
-          id: vectorId,
-          values: sampleVector,
-          metadata: {
-            ...metadata,
-            text: `Conteúdo de exemplo do arquivo ${fileName}`,
-            source: filePath
-          }
-        }],
-        namespace: ns
-      });
+      const upsertResponse = await index.upsert([{
+        id: vectorId,
+        values: sampleVector,
+        metadata: {
+          ...metadata,
+          text: `Conteúdo de exemplo do arquivo ${fileName}`,
+          source: filePath
+        }
+      }], { namespace: ns });
       
       console.log("Resposta do upsert:", upsertResponse);
       
       // Verificar se o upsert foi bem-sucedido
-      if (upsertResponse.upsertedCount === 1) {
+      if (upsertResponse && upsertResponse.upsertedCount === 1) {
         console.log("Upsert realizado com sucesso!");
         
         const response: UpsertResponse = {
