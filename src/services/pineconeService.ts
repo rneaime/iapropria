@@ -396,7 +396,7 @@ export const pineconeService = {
       const indexName = configService.getIndexName() || INDEX_NAME;
       const index = pineconeClient.index(indexName);
       
-      // Deletar com o SDK oficial
+      // Deletar com o SDK oficial - corrigindo o erro de argumentos
       await index.deleteOne(documentId, { namespace: userId });
       
       toast({
